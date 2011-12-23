@@ -6,6 +6,17 @@ Links
 - http://progit.org/book/ probably the best source about how to get started with GIT
 
 
+Convenience tips
+================
+
+Bash completion
+---------------
+
+On Debian there is `/etc/bash_completion.d/git` which is automatically sourced.  To enable this you need to alter your `~/.bashrc` to include `$(__git_ps1 "(%s)")` just before the `\$` on lines matching the pattern `PS1='.*\$ '` which do not include __git_ps1 yet.
+
+A script named `fix-bashrc.sh` does this for you.
+
+
 Safety tips
 ===========
 
