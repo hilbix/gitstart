@@ -79,11 +79,13 @@ Usage
 
 In bash hit gitstart- and TAB to see all tools.  Call them without parameters outside a GIT repository to see the complete usage.
 
-Before install to clone all known repositories onto the local machine and build them:
+Before install:
 
-gitstart/gitstart-build-all.sh
+* gitstart/gitstart-build-all.sh clones all your configured standard repositories onto the local machine and build them.
 
-Basic use after install:
+After install:
+
+* `gitstart-add.sh [REPOS [ACCOUNT]]` add a repository deployment key.  If called inside a GIT directory, `REPOS` is taken from the directory name if not given.  Redisplays everything if it already is set up.
 
 * `gitstart-clone.sh REPOS` clones a repository (into directory REPOS) and then creates and displays a deployment key.  `git push` works as soon as you have added the deployment key.  `git fetch` is done using HTTPS, `git push` via SSH until you call `gitstart-push.sh`.
 
