@@ -12,7 +12,7 @@ Convenience tips
 Bash completion
 ---------------
 
-On Debian there is `/etc/bash_completion.d/git` which is automatically sourced.  To enable this you need to alter your `~/.bashrc` to include `$(__git_ps1 "(%s)")` just before the `\$` on lines matching the pattern `PS1='.*\$ '` which do not include __git_ps1 yet.
+On Debian there is `/etc/bash_completion.d/git` which is automatically sourced if `bash-completion` is installed.  To enable this you just need to alter your `~/.bashrc` to include `$(__git_ps1 "(%s)")` before the `\$` on lines matching the pattern `PS1='.*\$ '` (which do not already include __git_ps1 yet).
 
 A script named `fix-bashrc.sh` does this for you.
 

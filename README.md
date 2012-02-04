@@ -1,4 +1,6 @@
 **NOT READY YET**
+In the meanwhile read QUICKSTART.md.
+
 
 Quick tools for GitHub
 ======================
