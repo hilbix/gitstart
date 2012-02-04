@@ -7,6 +7,7 @@ def=
 def="`basename "$def"`"
 GITHUBREPO="${1:-$def}"
 
+def=
 read def < "$DIR/.github-default"
 GITHUBACCOUNT="${2:-$def}"
 if [ -z "$GITHUBACCOUNT" -o -z "$GITHUBREPO" ]
