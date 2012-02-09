@@ -28,5 +28,5 @@ else
 	mv -v --backup=t "$TMP" "$RC"
 fi
 
-[ -f /etc/profile.d/bash-completion.sh ] ||
+[ -f /etc/profile.d/bash_completion.sh ] ||
 echo "You probably need: sudo apt-get install bash-completion" >&2
