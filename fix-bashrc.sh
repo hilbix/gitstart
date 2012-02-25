@@ -19,6 +19,7 @@ EOF
 # Append some proper settings for __git_ps1
 add "export GIT_PS1_SHOWDIRTYSTATE=yes"
 add "export GIT_PS1_SHOWUNTRACKEDFILES=yes"
+add "export GIT_PS1_SHOWUPSTREAM=verbose"
 
 # Install the changes
 if	cmp -s "$RC" "$TMP"

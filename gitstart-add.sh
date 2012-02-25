@@ -54,7 +54,7 @@ To make your local master branch tracking the remote master branch
 
 git remote rename origin oldorigin
 git remote add origin git-$GITNAME:$GITHUBACCOUNT/$GITHUBREPO.git
-git push origin master
+git push origin master ### THIS ONE IS IMPORTANT ###
 git checkout origin/master; git branch -f master origin/master; git checkout master
 
 To display this information again, just run $0 again.
