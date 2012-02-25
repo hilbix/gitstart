@@ -15,3 +15,4 @@ a ls	log --graph --oneline
 a st	status
 a up	status
 
+a lost-branches '!cd .git && { cd ..; git fsck --lost-found; for a in .git/lost-found/commit/*; do b="`basename "$a"`"; git checkout "$b"; git branch "lost-$b"; done; }; git branch -v'
