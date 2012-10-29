@@ -1,10 +1,13 @@
 #!/bin/bash
 
+s()
+{
+git config --global --replace-all "$1" "${*:2}"
+}
+
 a()
 {
-a="$1"
-shift
-git config --global --replace-all alias."$a" "$*"
+s "alias.$@"
 }
 
 a amend	commit --amend
@@ -14,4 +17,7 @@ a co	checkout
 a ls	log --graph --oneline
 a st	status
 a up	status
+
+s tig.show-rev-graph yes
+a all	!tig --all
 
