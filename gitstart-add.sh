@@ -6,6 +6,11 @@ def=
 [ -d .git -a -f .git/config ] && def="`/bin/pwd`"
 def="`basename "$def"`"
 GITHUBREPO="${1:-$def}"
+while	g="${GITHUBREPO%[-._A-Z]}"
+	[ ".$g" != ".$GITHUBREPO" ]
+do
+	GITHUBREPO="$g"
+done
 
 def=
 read def < "$DIR/.github-default"
