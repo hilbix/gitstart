@@ -35,6 +35,9 @@ GITNAME="$GITHUBACCOUNT-$GITHUBREPO"
 
 ssh-keygen -qt rsa -C "$GITNAME" -f "$DIR/$GITNAME" -N '' </dev/null &&
 
+{
+cmp -s "$DIR/config" "$DIR/config.last" && rm -f "$DIR/config.last";
+
 cat <<EOF >> "$DIR/config"
 
 Host git-$GITNAME
@@ -43,6 +46,9 @@ Host git-$GITNAME
  IdentityFile $DIR/$GITNAME
 
 EOF
+}
+
+cp --backup=t "$DIR/config" "$DIR/config.last" &&
 
 cat <<EOF
 
@@ -50,9 +56,7 @@ Paste this to GitHub:
 
 EOF
 
-cat "$DIR/$GITNAME.pub"
-
-cat <<EOF
+cat "$DIR/$GITNAME.pub" - <<EOF
 
 To make your local master branch tracking the remote master branch
 (this assumes you have committed everything):
