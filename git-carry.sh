@@ -4,7 +4,9 @@
 # git cherry HEAD $1 | git cherry-pick
 
 SRC=GIT
-CARRY=.gitcarry
+DIR=.gitcarry
+
+set -e
 
 OOPS()
 {
@@ -35,26 +37,34 @@ WIDTH="`tput cols`" || mode=cat
 note WIDTH=$WIDTH
 
 # fix LESS such that -S does not break -F
+: lesser
 lesser()
 {
 export LESS="-X -S -F -R"
-expand | cut -b 1-$WIDTH |
+expand | cut -b "1-$WIDTH" |
 $mode
 }
 
+: sep command
 sep()
 {
-echo '
-------------------------------------------------------------------------
-'
-[ 0 = $# ] || "$@" | lesser
+m=$[${#1}/2]
+p="------------------------------"
+p="-----${p:$m}"
+
+echo "
+$p $1 $p
+"
+x "${@:2}" | lesser
 }
 
 # Only list cherrypicks not yet ignored
+: huntpicks
 huntpicks()
 {
-note "Checking $1...$2"
-git cherry -v "$1" "$2" |
+note '################ Remember to "git remote update --prune" ################'
+note "$CARRY checking $ARG1...$ARG2"
+git cherry -v "$ARG1" "$ARG2" |
 awk -v CARRY="$CARRY" '
 BEGIN			{
 			while ((getline < CARRY)>0)
@@ -77,7 +87,9 @@ END			{
 '
 }
 
-ignwarn=false
+ignwarn=true	# should be false
+# Ask if souperfluous SHA shall be removed from .gitcarry
+: rmpick text SHA comment
 rmpick()
 {
 $ignwarn && { echo "[$ARG1...$ARG2] $*"; return; }
@@ -88,8 +100,8 @@ do
 	case "$ans" in
 	r|R)	remover "$2";; # Remover here
 	k|K)	return;;
-	b|B)	sep x git branch -avv;;
-	d|D)	sep x git show "$2";;
+	b|B)	sep "branches" git branch -avv;;
+	d|D)	sep "diff $2" git show "$2";;
 	x|X)	OOPS exit;;
 	i|I)	ignwarn=:; break;;
 	*)	echo " try: Remove Keep Diff Branches eXit Quit Ignore";;
@@ -97,16 +109,17 @@ do
 done
 }
 
+# Ask if the SHA shall be applied as cherry-pick
+: addpick SHA comment
 addpick()
 {
 list=:
 diff=:
 while
-	$list && sep x git log -n 5 --reverse --oneline
-	$list && sep x git log -n 5 --reverse --oneline "$ARG2"
-	$list && sep x huntpicks "$ARG1" "$ARG2"
-#	$list && sep x git cherry -v "$ARG1" "$ARG2"
-	$diff && sep x git show "$1" | lesser
+	$list && sep "$ARG1" git log -n 5 --reverse --oneline "$ARG1"
+	$list && sep "$ARG2" git log -n 5 --reverse --oneline "$ARG2"
+	$list && sep "all picks" huntpicks
+	$diff && sep "diff $1" git show "$1" | lesser
 	list=false
 	diff=false
 	read -rsN1 -p"$* [csidlbx]? " ans </dev/tty || exit
@@ -118,13 +131,15 @@ do
 	i|I)	ignore "$1" "manually ignored"; break;;
 	d|D)	diff=:;;
 	l|L)	list=:;;
-	b|B)	sep x git branch -avv;;
+	b|B)	sep "branches" git branch -avv;;
 	x|X)	OOPS exit;;
 	*)	echo " try: Cherrypick Skip Ignore Diff List Branches eXit Quit";;
 	esac
 done
 }
 
+# Process the cherry-pick
+: cherry SHA
 cherry()
 {
 if	git cherry-pick -x -Xpatience "$1"
@@ -141,26 +156,71 @@ git cherry-pick --abort
 return 1
 }
 
+# Add some SHA to the .gitcarray file to ignore it in future
+: ignore SHA comment
 ignore()
 {
 echo "$1 `date +%Y%m%d-%H%M%S` ${*:2}" >> "$CARRY"
 }
 
+# Remove some SHA from the .gitcarray file
+: remover SHA
 remover()
 {
 note REMOVE NOT YET IMPLEMENTED
 return 1
 }
 
+# Look into .gitcarry/ to find suitable .default file.
+# If not found, stick to the defaults.
+: locate-default /branch ''
+locate-default()
+{
+if [ -f "$DIR/$1/.default" ]
+then
+	read ARG2 < "$DIR/$1/.default"
+	# If something like .../ then append the rest, else it is an absolute destination
+	case "$ARG2" in
+	*/)	ARG2="$ARG2${2#/}";;
+	esac
+	return
+fi
 
-ARG1="$(git rev-parse --abbrev-ref HEAD)"
+[ -z "$1" ] && return
+
+# Tail recoursion
+locate-default "${1%/*}" "/${1##*/}$2"
+}
+
+# Set the default values
+
+ARG1="$(git rev-parse --symbolic-full-name HEAD)"
+ARG1="${ARG1#refs/heads/}"
+ARG2="upstream/$ARG1"
+
+# Pick some sane command line arguments
+
 case "$#:$1" in
-0:)	ARG2="upstream/$ARG1";;
+0:)	locate-default "/$ARG1";;
 1:*..*)	ARG1="${1%%..*}""; ARG2="${1%%*..}"";;
 1:*)	ARG2="$1";;
 2)	ARG1="$1"; ARG2="$2";;
 *)	OOPS "wrong number of arguments: $*";;
 esac
+
+# Recalculate sane values
+
+ARG1="$(git rev-parse --symbolic-full-name "$ARG1")"
+ARG1="${ARG1#refs/heads/}"
+ARG2="$(git rev-parse --symbolic-full-name "$ARG2")"
+ARG2="${ARG2#refs/}"
+
+# Prepare the correct .gitcarry-file
+
+CARRY="$DIR/$ARG1/$ARG2"
+mkdir -p "${CARRY%/*}"
+
+# Run all the possible picks displayed by "git cherry"
 
 warns=false
 while	read -ru6 flg sha note
@@ -170,6 +230,5 @@ do
 	+)	addpick "$sha" "$note"; continue;;
 	*)	OOPS "unkown flag: $flg";;
 	esac
-done 6< <(huntpicks "$ARG1" "$ARG2")
-
+done 6< <(huntpicks)
 
