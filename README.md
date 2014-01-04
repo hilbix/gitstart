@@ -1,113 +1,87 @@
-**NOT READY YET**
-In the meanwhile read QUICKSTART.md.
+**This already is useful to others!**
 
 
-Quick tools for GitHub
-======================
+Helpers for Git and GitHub
+==========================
 
-These are my tools to quickly access GitHub repositories.
+Some tools to quickly access and process GitHub repositories and similar.
 
-The tools need BASH and probably only run on Linux.
-
-All here basically was created for my own needs.
+It needs BASH and probably only run on Linux.
 
 
-Rationale
----------
+Setup:
+------
 
-I manage more than 10 machines and I love to edit things anywhere.
+On each machine:
 
-For security reasons all repository access is done via individual Deploy Keys.  As on GitHub one SSH key is for one GIT repository, creating push access to N profiles on M machines within L accounts (my named user, root, probably some service accounts) involves creation of NxMxL SSH keys.  Go figure.
-
-My goal is to be able to set up VMs with nearly no manual intervention.  In that case I want to deploy all the common things to them, and this then needs a way to be able to easily add push access to all my GitHub repos quickly.
-
-This here will bundle some shell helper scripts to help with all that.
-
-More on the basics see http://permalink.de/tino/github
-
-
-Configuration
--------------
-
-There is a configuration file gitstart.conf which bundles all the settings which shall be customized.  The information in that is public, this is by purpose.  Do not put any private information in there, only public one!
-
-If you fork this repository, edit that file and push it to your local repo to keep it handy.  That's it.
-
-
-Install
--------
-
-First time:
-
-On GitHub clone https://github.com/hilbix/gitstart into your own repository.
-
-```shell
-git clone https://github.com/YOURPROFILE/gitstart
-cd gitstart
-vi gitstart.conf
-./gitstart.sh
-git push
+```bash
+git clone https://github.com/hilbix/gitstart
+make install
 ```
 
-From then on you can do:
+This installs everything:
 
-```shell
-git clone https://github.com/YOURPROFILE/gitstart
-gitstart/gitstart.sh
-```
-
-If you have ideas to reduce the effort further, please let me know ;)
+- runs `aliases.sh`
+- runs `fix-bashrc.sh`
+- installs `gitstart-add.sh` as `~/.ssh/.add` (a location which can be easily found)
+- installs `git-carry.sh` in `~/bin/`
 
 
-Files
------
-
-* Your local configuration file.  This is cloned from your repository:
-~/.ssh/gitstart.conf
-
-* The tools are by default installed to /usr/local/bin with a name like gitstart-*.sh
-
-* The SSH configuration for additional GitHub specific ssh destinations
-~/.ssh/config
-
-Optional system wide configuration files:
-
-/etc/default/gitstart.conf
-/etc/gitstart.conf
-
-
-Usage
------
-
-In bash hit gitstart- and TAB to see all tools.  Call them without parameters outside a GIT repository to see the complete usage.
-
-Before install:
-
-* gitstart/gitstart-build-all.sh clones all your configured standard repositories onto the local machine and build them.
+Usage:
+------
 
 After install:
 
-* `gitstart-add.sh [REPOS [ACCOUNT]]` add a repository deployment key.  If called inside a GIT directory, `REPOS` is taken from the directory name if not given.  Redisplays everything if it already is set up.
+* `~/.ssh/.add [REPO [ACCOUNT]]` add a repository deployment key and tells you what to do.  `REPO` is taken from the current path.  `ACCOUNT` needs to be given on the first invocation only.  Try `~/.ssh/.add '' YOURGITHUBACCOUNT`.  It is idempotent, so you can run it multiple times and it always does the same.
 
-* `gitstart-clone.sh REPOS` clones a repository (into directory REPOS) and then creates and displays a deployment key.  `git push` works as soon as you have added the deployment key.  `git fetch` is done using HTTPS, `git push` via SSH until you call `gitstart-push.sh`.
+Aliases:
+--------
 
-* `gitstart-push.sh` reconfigures the current GIT repository for push access via SSH.  It will also set the fetch URL to SSH.
+This adds some GIT aliases.  Short documentation here:
 
-* `vi ~/.ssh/gitstart.conf` to alter your settings
+* `git st`: `git status`
+* `git amend`: `git commit --amend`.  BUG: Does not check for the replaced commit beeing pushed already, which would break origin.
+* `git amit`: `git commit --amend -C HEAD`: Just edit the last commit message again ignoring the index.  BUG: The command does not check yet if the current commit already was pushed (in which case you probably never want to use `--amend`).
+* `git check`: `git diff --check`
+* `git co`: `git checkout`
+* `git ls`: `git log --graph --oneline`
 
-Note that all tools are build such, that they behave reasonable if something breaks or already is present.
+* `git exec`: Runs a command at top level of the Worktree where the `.git` directory or `.git` file of the current Repo lives.  Try `git exec pwd`.  Note that this works for bare Repos, too.
+* `git top`: Runs a command at the topmost level of Worktrees where the `.git` directory lives.  If you do not use `git submodule`s or your submodules do not use `.git` files, then it is similar to `git exec`.  Try `git top git submodule status --recursive`.  Note that this does not work for bare repos.
+
+* `git tig` or `git all`: `tig --all`
+* `git relate [commit]`:  Show how the other branches relate to the given one, `HEAD` by default.
+* `git graph [commit[...]commit]`:  Shows a track chart of the given commits.  By default the current HEAD to it's upstream.  You can give `commit` which is `HEAD...commit` or `commit1...commit2` which is similar to `commit1 commit2`
+* `git graph1 [commit[...]commit]`:  As `git graph` but uses a single line for each commit.
+
+* `git carry [commit[...]commit]`: Interactively cherry-pick (cherry .. carry .. you get it) commits found in the given repository and missing locally.  This needs to find `git-carry.sh` in the current path.  By default it tries the current `BRANCH` to `upstream/BRANCH` (not: `origin`!).  Example: `git carry upstream/master` which is equivalent to `git carry` if you are on `master`.
+
+Things which are very special to me:
+
+* `git up`: `git status`  (this is because I always abused `cvs up` for what `git status` does today)
 
 
-Notes
------
+Rationale:
+----------
 
-It perhaps sounds odd that ~/.ssh/ holds gitstart.conf, but it is good to keep related information together.  Gitstart creates all public keys for SSH and adds the configuration, so storing the config there comes handy.
+I work on many machines and I love to edit things anywhere.  For security reasons all repository access is done via individual Deploy Keys on GitHub, so I can revoke one quickly.  L accounts on M machines with N repositories needs LxMxN SSH keys.  Go figure.
+
+This here bundles all the everywhere needed shell helpers, allowing me to do what I want quickly everywhere.
+
+See also http://permalink.de/tino/github
 
 
-Contact
--------
+Contact:
+--------
 
-For https://github.com/hilbix/gitstart you can contact me at https://hydra.geht.net/pager.php (please **do not** mark messages important!)
+If something does not work as expected, please try to fix it yourself.  If you think your changes are interesting, please send me a pull request on GitHub.
 
-For other repositories please contact the repository owner.
+Please note that I cannot read my mail due to SPAM.  So better use my pager (URL see GitHub) wisely, as I will ignore messages which are errornously marked important.  Thank you for your understanding.
+ 
+
+License:
+--------
+
+This Works is placed under the terms of the Copyright Less License,
+see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
 
