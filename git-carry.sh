@@ -1,7 +1,11 @@
 #!/bin/bash
 #
-# Interactively do something like following not working pipe:
-# git cherry HEAD $1 | git cherry-pick
+# Do something like following with a bit more interactive control:
+# git cherry HEAD $1 | git cherry-pick --stdin
+#
+# This remembers states in a directory called .gitcarry
+# This must be run in the topmost git directory like with:
+#	git config --global alias.carry '!git-carry.sh'
 
 SRC=GIT
 DIR=.gitcarry
@@ -65,7 +69,7 @@ huntpicks()
 note '################ Remember to "git remote update --prune" ################'
 note "$CARRY checking $ARG1...$ARG2"
 git cherry -v "$ARG1" "$ARG2" |
-awk -v CARRY="$CARRY" '
+awk -v CARRY="$CARRY" -v FULL="$1" '
 BEGIN			{
 			while ((getline < CARRY)>0)
 				if (!/^[[:space:]]*$/ && ! /^[[:space:]]*#/)
@@ -81,8 +85,10 @@ END			{
 			for (a in nocarry)
 				if (nocarry[a]!="" && !had[a])
 					print "warn missing " nocarry[a];
-			for (i=0; i<want; i++)
+			for (i=0; i<want && ( FULL=="true" || i<10 ); i++)
 				print need[i];
+			if (i<want)
+				print "[" (want-i) " more entries skipped]"
 			}
 '
 }
@@ -109,20 +115,43 @@ do
 done
 }
 
+lister()
+{
+{
+sep "$ARG1" git log -n 5 --reverse --oneline "$ARG1"
+sep "$ARG2" git log -n 5 --reverse --oneline "$ARG2"
+sep "all picks" huntpicks "$1"
+} | lesser
+}
+
+edit()
+{
+vim "$(git show  --oneline --no-notes --name-only "$1" | sed 1d)"
+
+# Missing here:
+# We must commit the changes before we can do the cherry-pick.
+# How can we - automagically - merge the edit and the future cherry-pick into a single commit?
+# Perhaps the only way is to stick to the cherry pick standard process (or git rerere).
+# However I like to resolve things first and then apply the merge/pick/etc. cleanly afterwards.
+# To allow this is WIP.  Sorry.
+}
+
 # Ask if the SHA shall be applied as cherry-pick
 : addpick SHA comment
 addpick()
 {
 list=:
 diff=:
+help=false
 while
-	$list && sep "$ARG1" git log -n 5 --reverse --oneline "$ARG1"
-	$list && sep "$ARG2" git log -n 5 --reverse --oneline "$ARG2"
-	$list && sep "all picks" huntpicks
-	$diff && sep "diff $1" git show "$1" | lesser
+	$list && lister "$list"
+	$diff && sep "diff $1" git show "$1"
+	{ $list && $diff; } || sep "file list" git show --oneline --no-notes --name-status "$1"
 	list=false
 	diff=false
-	read -rsN1 -p"$* [csidlbx]? " ans </dev/tty || exit
+	$help && echo && echo " try: Cherrypick Skip(once) Ignore(remember) Diff List Branches Vim eXit"
+	help=false
+	read -rsN1 -p"$* [csidlbvx]? " ans </dev/tty || exit
 do
 	echo "$ans"
 	case "$ans" in
@@ -130,10 +159,11 @@ do
 	s|S)	break;;
 	i|I)	ignore "$1" "manually ignored"; break;;
 	d|D)	diff=:;;
-	l|L)	list=:;;
+	l|L)	list=true;;
 	b|B)	sep "branches" git branch -avv;;
+	v|V)	edit;;
 	x|X)	OOPS exit;;
-	*)	echo " try: Cherrypick Skip Ignore Diff List Branches eXit Quit";;
+	*)	help=:;;
 	esac
 done
 }
