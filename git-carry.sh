@@ -161,7 +161,7 @@ do
 	d|D)	diff=:;;
 	l|L)	list=true;;
 	b|B)	sep "branches" git branch -avv;;
-	v|V)	edit;;
+	v|V)	edit "$1";;
 	x|X)	OOPS exit;;
 	*)	help=:;;
 	esac
