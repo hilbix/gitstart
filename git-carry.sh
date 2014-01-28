@@ -10,6 +10,9 @@
 SRC=GIT
 DIR=.gitcarry
 
+MINBASH=3.1
+MINGIT=1.7.10
+
 set -e
 
 OOPS()
@@ -17,6 +20,9 @@ OOPS()
 echo "OOPS: $*"
 exit 1
 }
+
+expr "$MINBASH" '>' "$BASH_VERSION" >/dev/null && OOPS "this needs bash $MINBASH or above"
+expr "$MINGIT" '>' "$(git version | sed 's/^[^0-9]*//g')" >/dev/null && OOPS "this needs GIT $MINGIT or above"
 
 note()
 {
@@ -124,22 +130,47 @@ sep "all picks" huntpicks "$1"
 } | lesser
 }
 
+: filelist CMD ARGS..
+filelist()
+{
+# This is one major shell drawback:
+# Handling lists of files possibly containing whitespace themself.
+# We fix that by reading in lines (assuming filenames never contain LF)
+# and record them in an array.  This is a bash feature.
+FILELIST=()
+while read -ru8 name
+do
+	FILELIST+=("$name")
+done 8< <("$@")
+
+}
+
 edit()
 {
-vim "$(git show  --oneline --no-notes --name-only "$1" | sed 1d)"
+filelist "${@:2}"
+vim $1 "${FILELIST[@]}"
+}
 
-# Missing here:
-# We must commit the changes before we can do the cherry-pick.
-# How can we - automagically - merge the edit and the future cherry-pick into a single commit?
-# Perhaps the only way is to stick to the cherry pick standard process (or git rerere).
-# However I like to resolve things first and then apply the merge/pick/etc. cleanly afterwards.
-# To allow this is WIP.  Sorry.
+ed()
+{
+# editor has no standard way to search across all variants, sorry
+filelist "$@"
+editor "${FILELIST[@]}"
+}
+
+pickfiles()
+{
+git show  --oneline --no-notes --name-only "$1" | sed 1d
 }
 
 # Ask if the SHA shall be applied as cherry-pick
 : addpick SHA comment
 addpick()
 {
+[ -n "$next" ] || { read -r flg sha note < <(huntpicks | grep ^+); next="$flg $sha"; note "next: $next"; }
+[ "+ $1" = "$next" ] || { note "skipping $1 $2"; return; }
+next=""
+
 list=:
 diff=:
 help=false
@@ -149,9 +180,9 @@ while
 	{ $list && $diff; } || sep "file list" git show --oneline --no-notes --name-status "$1"
 	list=false
 	diff=false
-	$help && echo && echo " try: Cherrypick Skip(once) Ignore(remember) Diff List Branches Vim eXit"
+	$help && echo && echo " try: Cherrypick Skip(once) Ignore(remember) Diff List Branches Vim/Edit eXit"
 	help=false
-	read -rsN1 -p"$* [csidlbvx]? " ans </dev/tty || exit
+	read -rsN1 -p"$* [csidlbvex]? " ans </dev/tty || exit
 do
 	echo "$ans"
 	case "$ans" in
@@ -161,7 +192,65 @@ do
 	d|D)	diff=:;;
 	l|L)	list=true;;
 	b|B)	sep "branches" git branch -avv;;
-	v|V)	edit "$1";;
+	v|V)	edit '' pickfiles "$1";;
+	e|E)	ed pickfiles "$1";;
+	x|X)	OOPS exit;;
+	*)	help=:;;
+	esac
+done
+}
+
+: diff-combined
+diff-combined()
+{
+# When `git diff --cc` is empty, then append `git diff -c` as well, else it is too confusing ;)
+
+combined="$(git diff -b -c)"
+condensed="$(git diff -b --cc)"
+[ ".$condensed" = ".${combined/--combined/--cc}" ] || echo "$combined
+
+=== condensed follows: =================================================
+"
+echo "$condensed"
+}
+
+statusfiles()
+{
+git status --porcelain | sed s/^...//
+}
+
+fixcherry()
+{
+filelist "$@"
+for a in "${FILELIST[@]}"
+do
+	git diff -b "$a" | grep '^++<<<<<<' && { note "$a still has unresolved conflicts"; return 1; }
+	git add "$a"
+done
+git diff -b -c | grep '^++<<<<<<' && { note "WTF? There are still some unresolved conflicts?"; return 1; }
+git cherry-pick --continue
+}
+
+: resolve pick
+resolve()
+{
+diff=:
+while
+	sep "pick conflicts" git status
+	$diff && sep "diff $1" diff-combined
+	diff=false
+	$help && echo && echo " try: Diff Vim/Edit Continue Undo(Abort) eXit"
+	help=false
+	read -rsN1 -p"$* [dvecuax]? " ans </dev/tty || exit
+do
+	echo "$ans"
+	case "$ans" in
+	d|D)	diff=:;;
+	v|V)	edit '+/<<<<<<<' statusfiles; diff=:;;
+	e|E)	ed statusfiles; diff=:;;
+	c|C)	fixcherry statusfiles && return; diff=:;;
+	u|U)	git cherry-pick --abort; return 1;;
+	a|A)	git cherry-pick --abort; return 1;;
 	x|X)	OOPS exit;;
 	*)	help=:;;
 	esac
@@ -172,18 +261,12 @@ done
 : cherry SHA
 cherry()
 {
-if	git cherry-pick -x -Xpatience "$1"
-then
-	# Picking was successfull, check if path-ids match
-	[ ".$(git show "$1" | git patch-id | cut -f1 -d' ')" = ".$(git show HEAD | git patch-id | cut -f1 -d' ')"  ] && return
+git merge --ff-only "$1" || git cherry-pick -x -Xpatience "$1" || resolve "$1" || return
 
-	ignore "$1" "see $(git rev-parse HEAD)"
-	return
-fi
-git status
-git diff -b
-git cherry-pick --abort
-return 1
+# Picking was successful, check if path-ids match
+[ ".$(git show "$1" | git patch-id | cut -f1 -d' ')" = ".$(git show HEAD | git patch-id | cut -f1 -d' ')"  ] && return
+
+ignore "$1" "see $(git rev-parse HEAD)"
 }
 
 # Add some SHA to the .gitcarray file to ignore it in future
@@ -191,6 +274,7 @@ return 1
 ignore()
 {
 echo "$1 `date +%Y%m%d-%H%M%S` ${*:2}" >> "$CARRY"
+git commit -m "updated $CARRY" "$CARRY"
 }
 
 # Remove some SHA from the .gitcarray file
@@ -252,6 +336,7 @@ mkdir -p "${CARRY%/*}"
 
 # Run all the possible picks displayed by "git cherry"
 
+next=
 warns=false
 while	read -ru6 flg sha note
 do
@@ -260,5 +345,5 @@ do
 	+)	addpick "$sha" "$note"; continue;;
 	*)	OOPS "unkown flag: $flg";;
 	esac
-done 6< <(huntpicks)
+done 6< <(huntpicks true)
 
