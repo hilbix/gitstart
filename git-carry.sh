@@ -99,7 +99,8 @@ END			{
 '
 }
 
-ignwarn=true	# should be false
+ignwarn=false
+ignwarn=true	# XXX TODO: REMOVE THIS LINE
 # Ask if souperfluous SHA shall be removed from .gitcarry
 : rmpick text SHA comment
 rmpick()
@@ -163,11 +164,12 @@ pickfiles()
 git show  --oneline --no-notes --name-only "$1" | sed 1d
 }
 
+SKIPS=""
 # Ask if the SHA shall be applied as cherry-pick
 : addpick SHA comment
 addpick()
 {
-[ -n "$next" ] || { read -r flg sha note < <(huntpicks | grep ^+); next="$flg $sha"; note "next: $next"; }
+[ -n "$next" ] || { read -r flg sha note < <(huntpicks | grep ^+ | fgrep -vxf <(echo "$SKIPS")); next="$flg $sha"; note "next: $next"; }
 [ "+ $1" = "$next" ] || { note "skipping $1 $2"; return; }
 next=""
 
@@ -187,7 +189,8 @@ do
 	echo "$ans"
 	case "$ans" in
 	c|C)	cherry "$1" && break;;
-	s|S)	break;;
+	s|S)	SKIPS="$SKIPS+ $*
+"; break;;
 	i|I)	ignore "$1" "manually ignored"; break;;
 	d|D)	diff=:;;
 	l|L)	list=true;;
@@ -281,6 +284,7 @@ git commit -m "updated $CARRY" "$CARRY"
 : remover SHA
 remover()
 {
+# XXX TODO IMPLEMENT THIS
 note REMOVE NOT YET IMPLEMENTED
 return 1
 }
@@ -347,3 +351,4 @@ do
 	esac
 done 6< <(huntpicks true)
 
+# See TODO above
