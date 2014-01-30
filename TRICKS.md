@@ -16,12 +16,12 @@ On Debian there is `/etc/bash_completion.d/git` which is automatically sourced i
 
 A script named `fix-bashrc.sh` does this for you.
 
-If your shell prompt suddenly takes ages, this might be because bash is evaluating the `git status` to prompt `PS1`.  In that case you can addjust `~/.bashrc` to your needs, just change the `git` environment variables (change the `yes` to `no`):
+If your shell prompt suddenly takes ages, this might be because bash is evaluating the `git status` to prompt `PS1`.  In that case you can addjust `~/.bashrc` to your needs, just add following at the end of `~/.bashrc`:
 ```bash
 export GIT_PS1_SHOWDIRTYSTATE=yes
-export GIT_PS1_SHOWUNTRACKEDFILES=yes
-export GIT_PS1_SHOWUPSTREAM=verbose
+export GIT_PS1_SHOWDIRTYSTATE=no
 ```
+It is important that both lines are added this way, such that `fix-bashrc.sh` does not accidentally adds the line back.
 
 
 
