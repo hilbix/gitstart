@@ -8,4 +8,5 @@ install:
 	ln -sf "`readlink -e gitstart-add.sh`" "$(HOME)/.ssh/.add"
 	mkdir -p "$(HOME)/bin"
 	ln -sf "`readlink -e git-carry.sh`" "$(HOME)/bin/"
+	ln -sf "`readlink -e git-alias.sh`" "$(HOME)/bin/"
 

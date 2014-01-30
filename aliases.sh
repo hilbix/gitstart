@@ -10,13 +10,16 @@ a()
 s "alias.$@"
 }
 
+a alias	!git-alias.sh
 a amend	commit --amend
 a amit	commit --amend -C HEAD
+a bvv	branch -avv
 a check	diff --check
 a co	checkout
 a ls	log --graph --oneline
 a st	status
 a up	status
+
 # As suggested by Daniel Brockman, see http://stackoverflow.com/questions/957928/is-there-a-way-to-get-the-git-root-directory-in-one-command#comment9747528_957978
 a exec	'!exec '
 # See https://gist.github.com/hilbix/7724772
