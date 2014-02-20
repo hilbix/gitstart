@@ -19,7 +19,7 @@ a co	checkout
 a ls	log --graph --oneline
 a st	status
 a up	status
-a squash git rebase --interactive
+a squash rebase --interactive
 
 # As suggested by Daniel Brockman, see http://stackoverflow.com/questions/957928/is-there-a-way-to-get-the-git-root-directory-in-one-command#comment9747528_957978
 a exec	'!exec '
