@@ -18,7 +18,7 @@ a bv	"!git branch -avv | sed 's/^/x/' | awk '\$3!=\"->\" { m[\$3]=m[\$3] substr(
 a check	diff --check
 a co	checkout
 a ls	log --graph --oneline
-a st	'!git status | less -XF'
+a st	'!f() { git status "$@" | less -XF; }; f'
 a up	status
 a squash rebase --interactive
 #a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
