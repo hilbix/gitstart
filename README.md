@@ -39,7 +39,7 @@ Aliases:
 
 This adds some GIT aliases.  Short documentation here:
 
-* `git st`: `git status`
+* `git st`: `git status | less`
 * `git amend`: `git commit --amend`.  BUG: Does not check for the replaced commit beeing pushed already, which would break origin.
 * `git amit`: `git commit --amend -C HEAD`: Just edit the last commit message again ignoring the index.  BUG: The command does not check yet if the current commit already was pushed (in which case you probably never want to use `--amend`).
 * `git check`: `git diff --check`

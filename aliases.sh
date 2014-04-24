@@ -18,9 +18,10 @@ a bv	"!git branch -avv | sed 's/^/x/' | awk '\$3!=\"->\" { m[\$3]=m[\$3] substr(
 a check	diff --check
 a co	checkout
 a ls	log --graph --oneline
-a st	status
+a st	'!git status | less -XF'
 a up	status
 a squash rebase --interactive
+#a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
 
 # As suggested by Daniel Brockman, see http://stackoverflow.com/questions/957928/is-there-a-way-to-get-the-git-root-directory-in-one-command#comment9747528_957978
 a exec	'!exec '
