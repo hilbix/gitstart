@@ -1,71 +1,127 @@
 #!/bin/bash
 
-DIR="$HOME/.ssh"
+SSHDIR="$HOME/.ssh"
+DIR="$SSHDIR/git"
+mkdir -p "$DIR"
 
-def=
-[ -d .git -a -f .git/config ] && def="`/bin/pwd`"
-def="`basename "$def"`"
-GITHUBREPO="${1:-$def}"
-while	g="${GITHUBREPO%[-._A-Z]}"
-	[ ".$g" != ".$GITHUBREPO" ]
+def="$(git rev-parse --show-toplevel)"
+GITREPO="${1:-${def##*/}}"
+while	g="${GITREPO%[-._A-Z]}"
+	[ ".$g" != ".$GITREPO" ]
 do
-	GITHUBREPO="$g"
+	GITREPO="$g"
 done
+case "$GITREPO" in
+{tmp,dev,stage,prod,work,maint}.*)	GITREPO="${GITREPO#*.}";;
+esac
+
+if	[ -s "$SSHDIR/.github-default" ]
+then
+	cat <<EOF
+
+========================================================================
+Note that this is intermediate until I come around to replace this with
+something better.  Sorry for the disturbance.
+========================================================================
+It appears that you have used a previous version of
+	$0
+before.  Please note that several things are improved now:
+
+- move new SSH keys into ~/.ssh/git/ to hide them from gnome-keyring
+- support other GIT services than GitHub
+  For this the 2nd arg now looks like hostname:repo
+- It is assumed, that the base URL uses https.
+  http is insecure, so it must not be supported
+- It is assumed, that the push always goes via SSH.
+  (This supports at least GitHub and GitLab.)
+- No need to rewrite the URL of origin anymore.  Instead it is done by:
+  config --global url.NEW.insteadOf URL-of-origin
+
+As a benefit your ~/.ssh/ can be kept a bit more tidy now.
+
+To finish porting all the keys, do:
+
+- For all repos, call this script inside to create the new entries
+- Remove the old entries from ~/.ssh/config manually
+- Remove the old (ported) key, you can see it on the link count.
+
+After cleanup remove "$SSHDIR/.github-default" to get rid of this message.
+========================================================================
+EOF
+fi
 
 def=
-read def < "$DIR/.github-default"
-GITHUBACCOUNT="${2:-$def}"
-if [ -z "$GITHUBACCOUNT" -o -z "$GITHUBREPO" ]
+[ -s "$DIR/.git-default" ] && read def < "$DIR/.git-default"
+GITACCOUNT="${2:-$def}"
+if [ -z "$GITACCOUNT" -o -z "$GITREPO" ]
 then
 	cat >&2 <<EOF
-Usage: `basename "$0"` ['${GITHUBREPO:-GITHUBREPO}' ['${GITHUBACCOUNT:-GITHUBACCOUNT}']]"
-	Creates an SSH key named ${GITHUBACCOUNT:-GITHUBACCOUNT}-${GITHUBREPO:-GITHUBREPO}
-	for use as an GITHUB Deployment Key.  When called the first time, you must give
-	the 2nd parameter (GITHUBACCOUNT from https://github.com/GITHUBACCOUNT).
+
+Usage: `basename "$0"` ['${GITREPO:-GITREPO}' ['${GITACCOUNT:-GITACCOUNT}']]"
+	Creates an SSH key named ${GITACCOUNT:-GITACCOUNT}-${GITREPO:-GITREPO}
+	for use as an GIT Deployment Key.  When called the first time, you must give
+	the 2nd parameter HOST:GITACCOUNT (like github.com:ACC when https://github.com/ACC).
 	When called from a GIT directory, the first parameter defaults to the directory name.
+
 EOF
 	exit 1
 fi
 
-echo "$GITHUBACCOUNT" > "$DIR/.github-default"
+case "$GITACCOUNT" in
+*[^-_./:a-zA-Z0-9]*)	echo "OOPS: unclear character in $GITACCOUNT" >2; exit 1;;
+*:*)			;;
+*)			GITACCOUNT="github.com:$GITACCOUNT";;	# GitHub is a bit preferred here
+esac
+echo "$GITACCOUNT" > "$DIR/.git-default"
 
-GITNAME="$GITHUBACCOUNT-$GITHUBREPO"
+cmp -s "$SSHDIR/config" "$DIR/config.last" || cp --backup=t "$SSHDIR/config" "$DIR/config.last"
 
-[ ! -f "$DIR/$GITNAME" ] &&
+GITNAME="${GITACCOUNT//[:\/]/+}-$GITREPO"
+OLDNAME="${GITACCOUNT#*:}-$GITREPO"
 
-ssh-keygen -qt rsa -C "$GITNAME" -f "$DIR/$GITNAME" -N '' </dev/null &&
+[ ! -s "$DIR/$GITNAME" ] &&
 
-{
-cmp -s "$DIR/config" "$DIR/config.last" && rm -f "$DIR/config.last";
+if [ -s "$SSHDIR/$OLDNAME" ]
+then
+	echo "Porting $OLDNAME to $GITNAME"
+	# Port old format to new one
+	ln -v "$SSHDIR/$OLDNAME"     "$DIR/$GITNAME" &&
+	ln -v "$SSHDIR/$OLDNAME".pub "$DIR/$GITNAME".pub
+	# To really move it we would need to remove old clutter from ~/.ssh/config, no way, sorry
+else
+	ssh-keygen -qt rsa -C "$GITNAME" -f "$DIR/$GITNAME" -N '' </dev/null
+fi &&
 
-cat <<EOF >> "$DIR/config"
+cat <<EOF >> "$SSHDIR/config"
 
 Host git-$GITNAME
- Hostname github.com
+ Hostname ${GITACCOUNT%%:*}
  User git
  IdentityFile $DIR/$GITNAME
 
 EOF
-}
 
-cp --backup=t "$DIR/config" "$DIR/config.last" &&
+cat - "$DIR/$GITNAME.pub" <<EOF
 
-cat <<EOF
-
-Paste this to GitHub:
+Paste this to ${GITACCOUNT%%:*}:
 
 EOF
+echo
 
-cat "$DIR/$GITNAME.pub" - <<EOF
+# Suppress the message if everything already is set up correctly
+[ ".$(git ls-remote --get-url origin)" = ".git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git" ] ||
 
+# With 1.8 and above you can do "git push -u origin master" and leave the later line away.
+# However this here is portable from GIT 1.5 upward, I think.
+cat <<EOF
 To make your local master branch tracking the remote master branch
 (this assumes you have committed everything):
 
-git remote rename origin oldorigin
-git remote add origin git-$GITNAME:$GITHUBACCOUNT/$GITHUBREPO.git
-git push origin master ### THIS ONE IS IMPORTANT ###
+git config --global url.git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git.insteadOf $(git config --get remote.origin.url);
+git push origin master;		### THIS ONE IS IMPORTANT ###
 git checkout origin/master; git branch -f master origin/master; git checkout master
 
 To display this information again, just run $0 again.
 
 EOF
+

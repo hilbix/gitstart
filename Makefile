@@ -6,7 +6,7 @@ install:
 	./fix-bashrc.sh
 	./aliases.sh
 	ln -sf "`readlink -e gitstart-add.sh`" "$(HOME)/.ssh/.add"
-	mkdir -p "$(HOME)/bin"
-	ln -sf "`readlink -e git-carry.sh`" "$(HOME)/bin/"
-	ln -sf "`readlink -e git-alias.sh`" "$(HOME)/bin/"
+	mkdir -p "$(HOME)/bin" && for a in git-*.sh; do ln -vsf "`readlink -e "$$a"`" "$(HOME)/bin/"; done
+#	Sadly following fails utterly with blanks or LF in path:
+#		ln -sf `readlink -e git-*.sh` "$(HOME)/bin/"
 

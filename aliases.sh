@@ -42,3 +42,6 @@ a graph1 '!f(){ case "$#:$1" in 0:) r="HEAD...HEAD@{u}";; 1:*...*) r="$1";; 1:*)
 # This is "git cherry" with something like an UI
 a carry	!git-carry.sh
 
+# Upcoming: Formerly gitstart-add.sh and gitstart-ls.sh, in future git-ssh.sh
+a ssh !git-ssh.sh
+
