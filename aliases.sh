@@ -25,6 +25,7 @@ a squash rebase --interactive
 
 # As suggested by Daniel Brockman, see http://stackoverflow.com/questions/957928/is-there-a-way-to-get-the-git-root-directory-in-one-command#comment9747528_957978
 a exec	'!exec '
+a make	'!exec make'
 # See https://gist.github.com/hilbix/7724772
 a top '!f() { GIT_TOP="${GIT_DIR%%/.git/modules/*}"; [ ".$GIT_TOP" != ".$GIT_DIR" ] && cd "$GIT_TOP"; unset GIT_DIR; exec "$@"; }; f'
 

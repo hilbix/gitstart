@@ -47,6 +47,7 @@ This adds some GIT aliases.  Short documentation here:
 * `git ls`: `git log --graph --oneline`
 
 * `git exec`: Runs a command at top level of the Worktree where the `.git` directory or `.git` file of the current Repo lives.  Try `git exec pwd`.  Note that this works for bare Repos, too.
+* `git make`: Shorthand for `git exec make`
 * `git top`: Runs a command at the topmost level of Worktrees where the `.git` directory lives.  If you do not use `git submodule`s or your submodules do not use `.git` files, then it is similar to `git exec`.  Try `git top git submodule status --recursive`.  Note that this does not work for bare repos.
 
 * `git tig` or `git all`: `tig --all`
