@@ -5,7 +5,7 @@ TMP="$RC.git.tmp"
 
 add()
 {
-fgrep -qx "$1" "$TMP" || echo "$1" >> "$TMP"
+grep -F -qx "$1" "$TMP" || echo "$1" >> "$TMP"
 }
 
 # Inserts the `$(__git_ps1 "(%s)")` right before the `$` on the PS1 prompt
