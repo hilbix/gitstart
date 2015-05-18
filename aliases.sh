@@ -33,6 +33,9 @@ s tig.show-rev-graph yes
 a all	!tig --all
 a tig	!tig --all
 
+# Switch to another branch, just moving head and NOT affecting workdir
+a switch '!f() { git show-ref --heads --verify "refs/heads/$1" && git symbolic-ref -m "switch to branch $1 not touching workdir" HEAD refs/heads/"$1"; }; f'
+
 # See https://gist.github.com/hilbix/7703225
 # Basic idea from https://gist.github.com/jehiah/1288596
 # f() trick from http://stackoverflow.com/questions/7005513/pass-an-argument-to-a-git-alias-command
