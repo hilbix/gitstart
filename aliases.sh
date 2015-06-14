@@ -14,7 +14,7 @@ a alias	!git-alias.sh
 a amend	commit --amend
 a amit	commit --amend -C HEAD
 a bvv	branch -avv
-a bv	"!git branch -avv | sed 's/^/x/' | awk '\$3!=\"->\" { m[\$3]=m[\$3] substr(\$1,2); sub(/^remotes\\//,\"/\",\$2); if (!f[\$3]) { f[\$3]=\$2; if (length(\$2)>mx) mx=length(\$2); } else { l=length(\$2)-length(f[\$3]); if (substr(\$2,l)==\"/\"f[\$3]) \$2=substr(\$2,1,l); k[\$3]=k[\$3] \" \" \$2; } } END { for (a in f) printf(\"x%-1s %s %-*s %s\\n\", m[a], a, mx, f[a], k[a]); }' | sort -bk2 | sed 's/^x//'"
+a bv	"!git branch -avv | sed 's/^/x/' | awk '\$2==\"(detached\" && \$3==\"from\" && \$4==\$5\")\" { \$2=\"HEAD\"; \$3=\$5; } \$3!=\"->\" { m[\$3]=m[\$3] substr(\$1,2); sub(/^remotes\\//,\"/\",\$2); if (!f[\$3]) { f[\$3]=\$2; if (length(\$2)>mx) mx=length(\$2); } else { l=length(\$2)-length(f[\$3]); if (substr(\$2,l)==\"/\"f[\$3]) \$2=substr(\$2,1,l); k[\$3]=k[\$3] \" \" \$2; } } END { for (a in f) printf(\"x%-1s %s %-*s %s\\n\", m[a], a, mx, f[a], k[a]); }' | sort -bk2 | sed 's/^x//'"
 a check	diff --check
 a co	checkout
 a pager	'!pager() { cd "$GIT_PREFIX" && git -c color.status=always -c color.ui=always "$@" 2>&1 | less -XFR; }; pager'
