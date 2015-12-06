@@ -13,6 +13,8 @@ DIR=.gitcarry
 MINBASH=3.1
 MINGIT=1.7.10
 
+export LC_ALL=C
+
 set -e
 
 OOPS()

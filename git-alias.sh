@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LC_ALL=C
+
 # Only list for now
 
 git config --get-regexp ^alias |

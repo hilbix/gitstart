@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LC_ALL=C
+
 list()
 {
 for a in "$HOME/.ssh"/*.pub

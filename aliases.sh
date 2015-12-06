@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LC_ALL=C
+
 s()
 {
 git config --global --replace-all "$1" "${*:2}"

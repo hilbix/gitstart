@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LC_ALL=C
+
 SSHDIR="$HOME/.ssh"
 DIR="$SSHDIR/git"
 mkdir -p "$DIR"

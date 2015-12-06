@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LC_ALL=C
+
 RC="$HOME/.bashrc"
 TMP="$RC.git.tmp"
 
