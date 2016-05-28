@@ -1,0 +1,3 @@
+[submodule "git-scripts"]
+	path = git-scripts
+	url = https://github.com/hilbix/git-scripts.git
