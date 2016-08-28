@@ -12,11 +12,12 @@ while	g="${def%[-._A-Z]}"
 do
 	def="$g"
 done
+def="${def##*/}"
 case "$def" in
 {tmp,dev,stage,prod,work,maint}.*)	def="${def#*.}";;
 esac
 
-GITREPO="${1:-${def##*/}}"
+GITREPO="${1:-$def}"
 
 if	[ -s "$SSHDIR/.github-default" ]
 then
@@ -82,7 +83,7 @@ echo "$GITACCOUNT" > "$DIR/.git-default"
 
 cmp -s "$SSHDIR/config" "$DIR/config.last" || cp --backup=t "$SSHDIR/config" "$DIR/config.last"
 
-GITNAME="${GITACCOUNT//[:\/]/+}-$GITREPO"
+GITNAME="${GITACCOUNT//[:\/]/+}-${GITREPO%.wiki}"
 OLDNAME="${GITACCOUNT#*:}-$GITREPO"
 
 if	! ORG="$(git config --get remote.origin.url)" ||	# usually true
