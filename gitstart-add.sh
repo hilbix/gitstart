@@ -2,22 +2,34 @@
 
 export LC_ALL=C
 
+HERE="$(readlink -e .)"
+
 SSHDIR="$HOME/.ssh"
 DIR="$SSHDIR/git"
 mkdir -p "$DIR"
 
-def="$(git rev-parse --show-toplevel)"
-while	g="${def%[-._A-Z]}"
-	[ ".$g" != ".$def" ]
+TOP="$(git rev-parse --show-toplevel)" ||
+{
+	cat <<EOF >&2
+You are not in a git repository.  Please run:
+	git init
+EOF
+	exit 1
+}
+TOP="$(readlink -e "$TOP")"
+
+tmp="$TOP"
+while	g="${tmp%[-._A-Z]}"
+	[ ".$g" != ".$tmp" ]
 do
-	def="$g"
+	tmp="$g"
 done
-def="${def##*/}"
-case "$def" in
-{tmp,dev,stage,prod,work,maint}.*)	def="${def#*.}";;
+tmp="${tmp##*/}"
+case "$tmp" in
+{tmp,dev,stage,prod,work,maint}.*)	tmp="${tmp#*.}";;
 esac
 
-GITREPO="${1:-$def}"
+GITREPO="${1:-$tmp}"
 
 if	[ -s "$SSHDIR/.github-default" ]
 then
@@ -29,14 +41,14 @@ something better.  Sorry for the disturbance.
 ========================================================================
 It appears that you have used a previous version of
 	$0
-before.  Please note that several things are improved now:
+before.  Please note that several things are improved:
 
-- move new SSH keys into ~/.ssh/git/ to hide them from gnome-keyring
+- Now new SSH keys  go into ~/.ssh/git/ to hide them from gnome-keyring.
 - support other GIT services than GitHub
   For this the 2nd arg now looks like hostname:repo
-- It is assumed, that the base URL uses https.
-  http is insecure, so it must not be supported
-- It is assumed, that the push always goes via SSH.
+- Now it is assumed, that the base URL uses https.
+  http is insecure, so it is no more supported
+- Now it is assumed, that the push always goes via SSH.
   (This supports at least GitHub and GitLab.)
 - No need to rewrite the URL of origin anymore.  Instead it is done by:
   config --global url.NEW.insteadOf URL-of-origin
@@ -45,7 +57,8 @@ As a benefit your ~/.ssh/ can be kept a bit more tidy now.
 
 To finish porting all the keys, do:
 
-- For all repos, call this script inside to create the new entries
+- For all repos, call this script inside to copy the ssh keys.
+- Follow the instructions.
 - Remove the old entries from ~/.ssh/config manually
 - Remove the old (ported) key, you can see it on link count >1
 - Remove the old ~/.ssh/config.last* entries if you like
@@ -138,22 +151,43 @@ Paste this to ${GITACCOUNT%%:*}:
 
 EOF
 echo
+[ ".$TOP" = ".$HERE" ] ||
+cat <<EOF >&2
++-----------------------------------------------------------------------
+! WARNING!
+! You are not in the git top level git directory.  The git top level is:
+! $TOP
++-----------------------------------------------------------------------
 
-# Suppress the message if everything already is set up correctly
-[ ".$(git ls-remote --get-url origin)" = ".git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git" ] ||
+EOF
 
-# With 1.8 and above you can do "git push -u origin master" and leave the later line away.
-# However this here is portable from GIT 1.5 upward, I think.
+finish()
+{
+# Suppress if everything already is set up correctly
+org="$(git ls-remote --get-url origin)"
+[ ".$org" = ".git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git" ] && return
+
+echo "Please do:"
+
+[ ".$ORG" = ".$org" ] ||
 cat <<EOF
-To make your local master branch tracking the remote master branch
-(this assumes you have committed everything):
 
-git config --global url.git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git.insteadOf $ORG;
-git push origin master;		### THIS ONE IS IMPORTANT ###
-git checkout origin/master; git branch -f master origin/master; git checkout master
+git config --global --unset 'url.$org.insteadOf';
+EOF
 
-To display this information again, just run this here again:
+cat <<EOF
+git config --global 'url.git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git.insteadOf' '$ORG';
+git push -u origin master
+
+If your git is too old for the last command, use this sequence instead:
+git push origin master; git checkout origin/master;
+git branch -f master origin/master; git checkout master
+
+To display this information again, run this here as often as you like:
 $0 $*
 
 EOF
+}
+
+finish
 
