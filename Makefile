@@ -10,3 +10,5 @@ install:
 #	Sadly following fails utterly with blanks or LF in path:
 #		ln -sf `readlink -e git-*.sh` "$(HOME)/bin/"
 
+clean:
+	echo dummy target
