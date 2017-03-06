@@ -23,6 +23,7 @@ a check	diff --check
 a co	checkout
 a pager	'!pager() { cd "$GIT_PREFIX" && git -c color.status=always -c color.ui=always "$@" 2>&1 | less -XFR; }; pager'
 a pageat '!pager() { at="$1" && shift && cd "$GIT_PREFIX" && git -c color.status=always -c color.ui=always "$@"  2>&1 | less -XFRp "$at"; }; pager'
+a tree	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --decorate --all'
 a ls	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --decorate'
 a ll	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --decorate --numstat'
 a la	'!cd "$GIT_PREFIX" && git pager log --color=always --graph -u --decorate'
