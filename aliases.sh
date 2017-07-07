@@ -25,6 +25,12 @@ a up	status
 a squash rebase --interactive
 #a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
 
+# See https://stackoverflow.com/a/44973360
+a sdiff	'!'"bash -c 'O=(); A=(); while x=\"\$1\"; shift; do case \$x in -*) O+=(\"\$x\");; *) A+=(\"\$x^{}\");; esac; done; g(){ git show \"\${A[\$1]}\" && return; echo FAIL \${A[\$1]}; git show \"\${A[\$2]}\"; }; diff \"\${O[@]}\" <(g 0 1) <(g 1 0)' --"
+a udiff	'!git sdiff -u'
+a bdiff	'!git sdiff -b'
+a ddiff	'!git pager udiff'
+
 # As suggested by Daniel Brockman, see http://stackoverflow.com/questions/957928/is-there-a-way-to-get-the-git-root-directory-in-one-command#comment9747528_957978
 a exec	'!exec '
 a make	'!exec make'
