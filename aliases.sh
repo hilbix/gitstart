@@ -2,15 +2,8 @@
 
 export LC_ALL=C
 
-s()
-{
-git config --global --replace-all "$1" "${*:2}"
-}
-
-a()
-{
-s "alias.$@"
-}
+s() { git config --global --replace-all "$1" "${*:2}"; }
+a() { s "alias.$@"; }
 
 a alias	!git-alias.sh
 a amend	commit --amend
