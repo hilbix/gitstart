@@ -42,7 +42,8 @@ a all	!tig --all
 a tig	!tig --all
 
 # Switch to another branch, just moving head and NOT affecting workdir
-a switch '!f() { git show-ref --heads --verify "refs/heads/$1" && git symbolic-ref -m "switch to branch $1 not touching workdir" HEAD refs/heads/"$1"; }; f'
+# See https://stackoverflow.com/a/45060070
+a switch '!f() { git rev-parse --verify "$*" && git checkout "HEAD^{}" && git reset --soft "$*" && git checkout "$*"; }; f'
 
 # See https://gist.github.com/hilbix/7703225
 # Basic idea from https://gist.github.com/jehiah/1288596
