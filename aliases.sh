@@ -9,7 +9,7 @@ a alias	!git-alias.sh
 a amend	commit --amend
 a amit	commit --amend -C HEAD
 a bvv	branch -avv
-a bv	"!git branch -avv | sed 's/^/x/' | awk '\$2==\"(detached\" && \$3==\"from\" && \$4==\$5\")\" { \$2=\"HEAD\"; \$3=\$5; } \$3!=\"->\" { m[\$3]=m[\$3] substr(\$1,2); sub(/^remotes\\//,\"/\",\$2); if (!f[\$3]) { f[\$3]=\$2; if (length(\$2)>mx) mx=length(\$2); } else { l=length(\$2)-length(f[\$3]); if (substr(\$2,l)==\"/\"f[\$3]) \$2=substr(\$2,1,l); k[\$3]=k[\$3] \" \" \$2; } } END { for (a in f) printf(\"x%-1s %s %-*s %s\\n\", m[a], a, mx, f[a], k[a]); }' | sort -bk2 | sed 's/^x//'"
+a bv	"!LC_ALL=C git branch -avv | sed 's/^/x/' | awk '\$2==\"(detached\" && \$3==\"from\" && \$4==\$5\")\" { \$2=\"HEAD\"; \$3=\$5; } \$2==\"(HEAD\" && \$3==\"detached\" && \$4==\"at\" && \$5==\$6\")\" { \$2=\"HEAD\"; \$3=\$6; } \$3!=\"->\" { m[\$3]=m[\$3] substr(\$1,2); sub(/^remotes\\//,\"/\",\$2); if (!f[\$3]) { f[\$3]=\$2; if (length(\$2)>mx) mx=length(\$2); } else { l=length(\$2)-length(f[\$3]); if (substr(\$2,l)==\"/\"f[\$3]) \$2=substr(\$2,1,l); k[\$3]=k[\$3] \" \" \$2; } } END { for (a in f) printf(\"x%-1s %s %-*s %s\\n\", m[a], a, mx, f[a], k[a]); }' | sort -bk2 | sed 's/^x//'"
 # Same for tags
 a tv	"!{ git tag --format='%(objectname)	%(refname:strip=2)'; git remote | while read -r n; do echo -n \" \$n\" >&2; git ls-remote --tags \"\$n\" | awk -F'\\t' -vN=\"\$n\" '{ sub(/^[^/]*\/[^/]*/,\"\",\$2); print \$1 \"\\t/\" N \$2 }'; done; echo >&2; } | sort -r | awk '{ if (!f[\$1]) { f[\$1]=\$2; if (mx<length(\$2)) mx=length(\$2); } else { l=length(\$2)-length(f[\$1]); if (\"/\"f[\$1]!=substr(\$2,l)) l=length(\$2); m[\$1]=m[\$1] \" \" substr(\$2,0,l); } } END { for (a in f) printf(\"%s %-*s %s\\n\", a, mx, f[a], m[a]); }' | sort"
 a check	diff --check
