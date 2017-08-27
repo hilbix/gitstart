@@ -24,12 +24,8 @@ add "export GIT_PS1_SHOWUNTRACKEDFILES=yes"
 add "export GIT_PS1_SHOWUPSTREAM=verbose"
 
 # Install the changes
-if	cmp -s "$RC" "$TMP"
-then
-	rm -f "$TMP"
-else
-	mv -v --backup=t "$TMP" "$RC"
-fi
+cmp -s "$RC" "$TMP" || cp -v --backup=t "$TMP" "$RC"
+rm -f "$TMP"
 
 [ -f /etc/profile.d/bash_completion.sh ] ||
 echo "You probably need: sudo apt-get install bash-completion" >&2
