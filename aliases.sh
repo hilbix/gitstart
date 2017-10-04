@@ -25,6 +25,9 @@ a up	status
 a squash rebase --interactive
 #a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
 
+# see https://stackoverflow.com/a/23532519
+a amend-tag	'!f(){ [ 1 = $# ] || { echo "amend-tag needs tag name"; return 1; }; git tag -f -a -- "$1" "$1^{}"; }; f'
+
 # See https://stackoverflow.com/a/44973360
 a sdiff	'!'"bash -c 'O=(); A=(); while x=\"\$1\"; shift; do case \$x in -*) O+=(\"\$x\");; *) A+=(\"\$x^{}\");; esac; done; g(){ git show \"\${A[\$1]}\" && return; echo FAIL \${A[\$1]}; git show \"\${A[\$2]}\"; }; diff \"\${O[@]}\" <(g 0 1) <(g 1 0)' --"
 a udiff	'!git sdiff -u'
