@@ -1,0 +1,28 @@
+#!/bin/bash
+
+OOPS()
+{
+{
+printf 'OOPS:'
+printf ' %q' "$@"
+printf '\n'
+} >&2
+exit 23
+}
+
+while	IFS='' read -ru6 line
+do
+	a="${line:3}"
+	b="${line:0:3}"
+	case "$b" in
+	' M ')	t=modified; git add "$a";;
+	'M  ')	t=modified;;
+	'?? ')	t=added; git add "$a";;
+	'A  ')	t=added;;
+	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
+	'D  ')	t=deleted;;
+	*)	OOPS unknown "$b:" "$a"
+	esac
+	printf '#%-7s %q\n' "$t" "$a"
+	git commit -m "$a $t" --only "$a"
+done 6< <(git status --porcelain)
