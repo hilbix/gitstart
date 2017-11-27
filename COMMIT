@@ -18,7 +18,7 @@ f="${1%% -> *}"
 t="${1#* -> }"
 
 printf '#%-7s %-25q\t-> %q\n' moved "$f" "$t"
-git commit -m "$1" --only "$f" "$t"
+git exec git commit -m "$1" --only "$f" "$t"
 }
 
 while	IFS='' read -ru6 line
@@ -36,5 +36,5 @@ do
 	*)	OOPS unknown "$b:" "$a"
 	esac
 	printf '#%-7s %q\n' "$t" "$a"
-	git commit -m "$a $t" --only "$a"
-done 6< <(git status --porcelain)
+	git exec git commit -m "$a $t" --only "$a"
+done 6< <(git status --porcelain .)
