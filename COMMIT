@@ -10,6 +10,17 @@ printf '\n'
 exit 23
 }
 
+moved()
+{
+local f t
+
+f="${1%% -> *}"
+t="${1#* -> }"
+
+printf '#%-7s %-25q\t-> %q\n' moved "$f" "$t"
+git commit -m "$1" --only "$f" "$t"
+}
+
 while	IFS='' read -ru6 line
 do
 	a="${line:3}"
@@ -21,6 +32,7 @@ do
 	'A  ')	t=added;;
 	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
 	'D  ')	t=deleted;;
+	'R  ')	moved "$a"; continue;;
 	*)	OOPS unknown "$b:" "$a"
 	esac
 	printf '#%-7s %q\n' "$t" "$a"
