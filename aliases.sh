@@ -50,6 +50,7 @@ a ll	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --deco
 a la	'!cd "$GIT_PREFIX" && git pager log --color=always --graph -u --decorate'
 a st	'!cd "$GIT_PREFIX" && git pager status'
 a ss	'!cd "$GIT_PREFIX" && git pager submodule summary'
+a su	'!cd "$GIT_PREFIX" && git pager submodule update'
 a up	status
 a squash rebase --interactive
 #a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
