@@ -35,6 +35,11 @@ do
 	'R  ')	moved "$a"; continue;;
 	*)	OOPS unknown "$b:" "$a"
 	esac
+	case "$a" in
+	*/)	printf '#%-7s %q\n' STAGED "$a"; continue;;
+	esac
 	printf '#%-7s %q\n' "$t" "$a"
 	git exec git commit -m "$a $t" --only "$a"
 done 6< <(git status --porcelain .)
+
+git status
