@@ -40,11 +40,16 @@ Aliases:
 This adds some GIT aliases.  Short documentation here:
 
 * `git st`: `git status | less`
-* `git amend`: `git commit --amend`.  BUG: Does not check for the replaced commit beeing pushed already, which would break origin.
+* `git bv`: summary for `git branch -av` with branches combined
+* `git bv.ign tag..`: ignore some branches in `git bv` output.  Opposite (enable again) is `git bv tag..`
+* `git bvv`: shortcut to `git branch -avv` (completes `git bv`)
+
+* `git amend`: `git commit --amend`.  BUG: Does not check for the replaced commit beeing pushed already, which will break origin.
 * `git amit`: `git commit --amend -C HEAD`: Just edit the last commit message again ignoring the index.  BUG: The command does not check yet if the current commit already was pushed (in which case you probably never want to use `--amend`).
 * `git check`: `git diff --check`
 * `git co`: `git checkout`
 * `git ls`: `git log --graph --oneline`
+* `git tree`: is `git ls --all`
 
 * `git exec`: Runs a command at top level of the Worktree where the `.git` directory or `.git` file of the current Repo lives.  Try `git exec pwd`.  Note that this works for bare Repos, too.
 * `git make`: Shorthand for `git exec make`
