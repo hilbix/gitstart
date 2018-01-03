@@ -11,14 +11,21 @@ a alias	!git-alias.sh
 a amend	commit --amend
 a amit	commit --amend -C HEAD
 a bvv	branch -avv
+b bv.ign <<<'for a; do git config --local --get-all ignore.bv | fgrep -qx "$a" || git config --local --add ignore.bv "$a"; done'
 b bv	<<'EOF'
-git branch -avv |
-sed 's/^/x/' |
+for a; do git config --local --unset ignore.bv "$a"; done;
+{
+git config --get-all ignore.bv | sed 's/^/d/';
+git branch -avv | sed 's/^/x/';
+} |
 awk '
+/^d/							{ a=substr($0,2); ign[a]=1; b=a; sub(/[^/]*$/,"",b); c=substr($0,2+length(b)); if (b=="") b="(local)"; m[b]="ignored"; f[b]="branch:"; k[b]=k[b] " " c; next }
 $2=="(detached" && $3=="from" && $4==$5")"		{ $2="HEAD"; $3=$5; }
 $2=="(HEAD" && $3=="detached" && $4=="at" && $5==$6")"	{ $2="HEAD"; $3=$6; }
 $3!="->"	{
-		m[$3]=m[$3] substr($1,2); sub(/^remotes\//,"/",$2);
+		m[$3]=m[$3] substr($1,2);
+		sub(/^remotes\//,"/",$2);
+		if (ign[$2]) next;
 		if (!f[$3])
 			{
 			f[$3]=$2;
@@ -32,7 +39,7 @@ $3!="->"	{
 		}
 END	{
 	for (a in f)
-		printf("x%-1s %s %-*s %s\n", m[a], a, mx, f[a], k[a]);
+		printf("x%-1s %s %-*s %s\n", m[a], a, (length(m[a])<2 ? mx : 0), f[a], substr(k[a],2));
 	}' |
 sort -bk2 |
 sed 's/^x//'
