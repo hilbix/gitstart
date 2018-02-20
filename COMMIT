@@ -38,9 +38,9 @@ do
 	a="${line:3}"
 	b="${line:0:3}"
 	case "$b" in
-	' M ')	t=modified; git add "$a";;
+	' M ')	t=modified; git exec git add "$a";;
 	'M  ')	t=modified;;
-	'?? ')	given "$a" "$@" || continue; t=added; git add "$a";;
+	'?? ')	given "$a" "$@" || continue; t=added; git exec git add "$a";;
 	'A  ')	t=added;;
 	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
 	'D  ')	t=deleted;;
