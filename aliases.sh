@@ -110,6 +110,34 @@ do
 done
 EOF
 
+# Do a fake merge with the given refs.
+# Parent is the current HEAD.
+# Content is the current index.  Use git read-tree etc. to set etc.
+# You can use the usual environment stuff to augment the commit.
+# If you need more, use 'git commit --amend'
+#
+# I did not find out how to have git tell what an argument is (sha, tag, branch)
+# so I leave it out for today.
+#n="$(git rev-parse --abbrev-ref "$a")" && [ -n "$n" ] && n="branch $n" || n="commit $c";
+#n="$(git describe --all --exact-match "$a")" && [ -n "$n" ] || n="$c";
+b fake-merge <<'EOF'
+declare -A HAVE;
+i=0;
+b=;
+P=();
+for a in HEAD "$@";
+do
+	c="$(git rev-parse --verify "$a")" || { echo "cannot interpret $a" >&2; exit 1; };
+	[ -z "${HAVE["$c"]}" ] || { echo "WARN: ignore already seen commit $a" >&2; continue; };
+	HAVE["$c"]=1;
+	P+=(-p "$c");
+	if [ -z "$b" ]; then b="Fake-Merge"; else b="$b $a,"; fi;
+done;
+ob="$(git write-tree)" || { echo "git-write-tree failed, aborting" >&2; exit 1; };
+cc="$(git commit-tree "${P[@]}" -m "${b:0:-1}" "$ob")" && git ff "$cc"
+EOF
+
+
 # As suggested by Daniel Brockman, see http://stackoverflow.com/questions/957928/is-there-a-way-to-get-the-git-root-directory-in-one-command#comment9747528_957978
 a exec	'!exec '
 a make	'!exec make'
