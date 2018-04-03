@@ -37,9 +37,11 @@ while	IFS='' read -ru6 line
 do
 	a="${line:3}"
 	b="${line:0:3}"
+	args=(--only)
 	case "$b" in
 	' M ')	t=modified; git exec git add "$a";;
 	'M  ')	t=modified;;
+	'MM ')	t=modified; args=(--patch);;
 	'?? ')	given "$a" "$@" || continue; t=added; git exec git add "$a";;
 	'A  ')	t=added;;
 	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
@@ -51,7 +53,7 @@ do
 	*/)	printf '#%-7s %q\n' STAGED "$a"; continue;;
 	esac
 	printf '#%-7s %q\n' "$t" "$a"
-	git exec git commit -m "$a $t" --only "$a"
+	git exec git commit -m "$a $t" "${args[@]}" "$a"
 done 6< <(git status --porcelain .)
 
 git status
