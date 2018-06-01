@@ -45,7 +45,7 @@ sort -bk2 |
 sed 's/^x//'
 EOF
 # Same for tags
-a tv	"!{ git tag --format='%(objectname)	%(refname:strip=2)'; git remote | while read -r n; do echo -n \" \$n\" >&2; git ls-remote --tags \"\$n\" | awk -F'\\t' -vN=\"\$n\" '{ sub(/^[^/]*\/[^/]*/,\"\",\$2); print \$1 \"\\t/\" N \$2 }'; done; echo >&2; } | sort -r | awk '{ if (!f[\$1]) { f[\$1]=\$2; if (mx<length(\$2)) mx=length(\$2); } else { l=length(\$2)-length(f[\$1]); if (\"/\"f[\$1]!=substr(\$2,l)) l=length(\$2); m[\$1]=m[\$1] \" \" substr(\$2,0,l); } } END { for (a in f) printf(\"%s %-*s %s\\n\", a, mx, f[a], m[a]); }' | sort"
+a tv	"!{ git tag --no-column | while read -r tag; do echo \"\$(git rev-parse \"refs/tags/\$tag\" || echo .)	\$tag\"; done; git remote | while read -r n; do echo -n \":: \$n\" >&2; git ls-remote --tags \"\$n\" | grep -vG '\\^{}\$' | awk -F'\\t' -vN=\"\$n\" '{ sub(/^[^/]*\/[^/]*/,\"\",\$2); print \$1 \"\\t/\" N \$2 }'; done; echo >&2; } | sort -r | awk '{ if (!f[\$1]) { f[\$1]=\$2; if (mx<length(\$2)) mx=length(\$2); } else { l=length(\$2)-length(f[\$1]); if (\"/\"f[\$1]!=substr(\$2,l)) l=length(\$2); m[\$1]=m[\$1] \" \" substr(\$2,0,l); } } END { for (a in f) printf(\"%s %-*s %s\\n\", a, mx, f[a], m[a]); }' | sort"
 a check	diff --check
 a co	checkout
 a ff	merge --ff-only --
