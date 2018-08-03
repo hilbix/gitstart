@@ -2,10 +2,12 @@
 
 export LC_ALL=C.UTF-8 || export LC_ALL=C
 
+q() { sed -e '/^#/d' -e 's/[[:space:]]#[[:space:]].*$//' -e "s/'/'\\\\''/g" -e 's/\t\t*/ /g' | tr '\n' '\t'; }
 s() { git config --global --replace-all "$1" "${*:2}"; }
 a() { s "alias.$@"; }
 # bash wrapper
-b() { a "$1" "!LC_ALL=$LC_ALL bash -c '$(sed "s/'/'\\\\''/g" | tr '\n' '\t' | sed 's/\t\t*/ /g')' --"; }
+b() { a "$1" "!LC_ALL=$LC_ALL bash -c  '$(q)' --"; }
+x() { a "$1" "!LC_ALL=$LC_ALL bash -xc '$(q)' --"; }
 
 a alias	!git-alias.sh
 a amend	commit --amend
@@ -88,6 +90,8 @@ EOF
 a udiff	'!git sdiff -u'
 a bdiff	'!git sdiff -b'
 a ddiff	'!git pager udiff'
+# Hightlight differences in blanks.  Solves: `git diff -b` is clean while `git diff` is not
+a cdiff	'!cdiff() { git diff --color "$@" | perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -XFR; }; cdiff'
 
 # Register all submodules which are missing in the index
 # Why isn't there an option to `submodule init` for this?
@@ -159,7 +163,7 @@ a relate '!f(){ x="$1"; case "$#" in 0|1) git for-each-ref --format="%(refname:s
 a dograph '!graph(){ case "$#:$3" in 2:) r="HEAD...HEAD@{u}";; 3:*...*) r="$3";; 3:*) r="HEAD...$3";; *) r="$3...$4";; esac; r1="$(git rev-parse "${r%%...*}")"; r2="$(git rev-parse "${r##*...}")"; echo "$r - $r1 - $r2"; r1s=" $(git rev-parse --short "$r1") "; eval "v=\"\$$1\""; if [ ".$r1" = ".$r2" ]; then git pageat "${v# }" log --color=always $2 -1 "$r1"; else git pageat "$v" rev-list --color=always --cherry-mark --dense --left-right --boundary $2 --graph "$r1...$r2" --; fi; }; graph'
 a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
- 
+
 # This is "git cherry" with something like an UI
 a carry	!git-carry.sh
 
