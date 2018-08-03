@@ -142,6 +142,7 @@ Host git-$GITNAME
  Hostname ${GITACCOUNT%%:*}
  User git
  IdentityFile $DIR/$GITNAME
+ IdentitiesOnly yes
 
 EOF
 
