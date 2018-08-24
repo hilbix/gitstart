@@ -157,6 +157,10 @@ s tig.show-rev-graph yes
 a all	!tig --all
 a tig	!tig --all
 
+a run	'!f() { cd "$GIT_PREFIX" && exec "$@"; }; f'			# Like 'git exec' but stay in current directory
+a bash	'!f() { cd "$GIT_PREFIX" && exec bash -c "${*:-set}"; }; f'	# "git bash x" is short for "git run bash -c x" where x defaults to "set"
+a dir	'!f() { cd "$GIT_DIR" && exec "${@:-"$SHELL"}"; }; f'		# enter/run in associated GIT_DIR
+
 # Switch to another branch, just moving head and NOT affecting workdir
 # See https://stackoverflow.com/a/45060070
 a switch '!f() { git rev-parse --verify "$*" && git checkout "HEAD^{}" && git reset --soft "$*" && git checkout "$*"; }; f'
