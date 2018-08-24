@@ -62,10 +62,25 @@ a ss	'!cd "$GIT_PREFIX" && git pager submodule summary'
 a su	'!cd "$GIT_PREFIX" && git pager submodule update'
 a up	status
 a squash rebase --interactive
+
 #a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
 
 # see https://stackoverflow.com/a/23532519
 a amend-tag	'!f(){ [ 1 = $# ] || { echo "amend-tag needs tag name"; return 1; }; git tag -f -a -- "$1" "$1^{}"; }; f'
+
+# see https://stackoverflow.com/a/30286468
+a find	'!f(){ git log -C -M -B --pretty=format: --name-status --all | egrep "${@:-.}"; }; f'
+b qf <<'qf-EOF'
+cd "$GIT_DIR";
+x="$(find objects -type f | sort | md5sum)";
+cmp -s quickfind.status.tmp <<<"$x" ||
+{
+echo -n "indexing .." >&2;
+git log -C -M -B --pretty=format: --name-status --all | sort -k2 | sed '/^$/d' | uniq -c > quickfind.list.tmp && echo "$x" > quickfind.status.tmp;
+echo " done" >&2;
+};
+egrep "${@:-.}" < quickfind.list.tmp;
+qf-EOF
 
 # See https://stackoverflow.com/a/44973360
 b sdiff	<<'EOF'

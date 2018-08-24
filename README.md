@@ -63,6 +63,9 @@ This adds some GIT aliases.  Short documentation here:
 * `git graph [commit[...]commit]`:  Shows a track chart of the given commits.  By default the current HEAD to it's upstream.  You can give `commit` which is `HEAD...commit` or `commit1...commit2` which is similar to `commit1 commit2`
 * `git graph1 [commit[...]commit]`:  As `git graph` but uses a single line for each commit.
 
+* `git find PATTERN`: search for `egrep`-`PATTERN` in the whole repository.  If `PATTERN` is missing, it just outputs all files (unsorted: what file)
+* `git qf PATTERN`: like `find` but re-uses an index for faster multiple searches of bigger repos (sorted: count what file)
+
 Things which are very special to me:
 
 * `git carry [commit[...]commit]`: Interactively cherry-pick (cherry .. carry .. you get it) commits found in the given repository and missing locally.  This needs to find `git-carry.sh` in the current path.  By default it tries the current `BRANCH` to `upstream/BRANCH` (not: `origin`!).  Example: `git carry upstream/master` which is equivalent to `git carry` if you are on `master`.
