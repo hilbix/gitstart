@@ -146,7 +146,12 @@ EOF
 a exec	'!exec '
 a make	'!exec make'
 # See https://gist.github.com/hilbix/7724772
-a top '!f() { GIT_TOP="${GIT_DIR%%/.git/modules/*}"; [ ".$GIT_TOP" != ".$GIT_DIR" ] && cd "$GIT_TOP"; unset GIT_DIR; exec "$@"; }; f'
+b top	<<'top-EOF'
+GIT_TOP="${GIT_DIR%%/.git/modules/*}";
+[ ".$GIT_TOP" != ".$GIT_DIR" ] && cd "$GIT_TOP";
+unset GIT_DIR;
+exec "$@";
+top-EOF
 
 s tig.show-rev-graph yes
 a all	!tig --all
