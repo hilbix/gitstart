@@ -59,7 +59,88 @@ a ll	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --deco
 a la	'!cd "$GIT_PREFIX" && git pager log --color=always --graph -u --decorate'
 a st	'!cd "$GIT_PREFIX" && git pager status'
 a ss	'!cd "$GIT_PREFIX" && git pager submodule summary'
-a su	'!cd "$GIT_PREFIX" && git pager submodule update'
+# not easy to pass additional parameters to subnodule foreach, when you need '$toplevel' etc.
+# git su: update all
+# git su path: update only this path
+# git su path/: update all in this path, not this path
+# git su -r: update all recursively
+# git su -r path: update only path
+b su <<'su-EOF'
+cd "$GIT_PREFIX" || exit;
+args='';
+[ 0 = $# ] || printf -vargs " %q" "$@";
+git pager submodule foreach 'git sane-submodule-update-from-submodule-foreach "$toplevel" "$path" "$name" "$sha1"'"$args"
+su-EOF
+# 'git submodule update' is insane, as it just cuts the current leaf of the submodule,
+# regardless if it gets lost or not.
+# This one here hopefully is sane in the sense that it only allows FF updating.
+b sane-submodule-update-from-submodule-foreach	<<'EOF'
+top="$1";
+pat="$2";
+nam="$3";
+sha="$4";
+shift 4 || exit;
+args=();
+recurse=false;
+case "$1" in
+-r*|--r*)	args=(--recursive); recurse=:; shift;;	# I am lazy
+esac;
+case "$1" in
+--)		shift;;			# Do not harm others with my laziness.
+esac;
+[ 0 = $# ] && set -- '';
+
+# Move this here to given $sha
+update()
+{
+# check if it is dirty, if so, do not change (as we are editing)
+ok="$(git status --porcelain)" && [ -z "$ok" ] || { printf '\n# Not clean!\n# MODULE %q\nPATH %q\n' "$pat" "$top" >&2; exit 1; };
+# first try some ff to the given SHA
+was="$(git rev-parse HEAD)";
+[ ".$was" = ".$sha" ] && printf 'ok %q\n' "$sha";
+git ff "$sha" >/dev/null;
+at="$(git rev-parse HEAD)";
+[ ".$at" = ".$was" ] || { printf 'fast forward %q..%q\n' "$was" "$at"; };
+[ ".$at" = ".$sha" ] ||
+if	# We are not at the wanted SHA, looks like it moves backward.
+	contained="$(git branch --list --contains | sed -e 's/^..//' -e '/^(/d' -e '2q')";
+	[ -n "$contained" ];
+then
+	# sha is contained in some branch, so we can safely move downward
+	git checkout --detach;
+	git reset --hard "$sha";
+	act="jumped"; [ ".$sha" = ".$(git merge-base "$sha" "$at")" ] && act="moved backward";
+	printf '%s from %q\n%s to   %q\n' "$act" "$at" "$act" "$sha";
+else
+	printf 'FAIL: %q is not on a branch\n' "$at";
+fi;
+$recurse && exec git su "${args[@]}";	# all is done, so we need not return
+};
+
+subpath()
+{
+sub="${1#"$2"}";
+printf '# %q\n' "1=$1" "2=$2" "sub=$sub";
+case "$sub" in
+('')	return 0;
+("$1")	;;
+('/'*)	return 0;
+esac;
+false;
+};
+
+ishit() { local a; for a; do [ -z "$a" ] || subpath "$pat" "${a%/}" && return; done; false; };
+
+ishit "$@" && update;
+
+subs=();
+for a; do subpath "$a" "$pat" && [ -n "$sub" ] && subs+="${sub#/}"; done;
+[ 0 = ${#subs[@]} ] && exit;
+
+#printf '## %q\n' "${subs[@]}";
+git su "${args[@]}" -- "${subs[@]}";
+:;
+EOF
 a up	status
 a squash rebase --interactive
 
