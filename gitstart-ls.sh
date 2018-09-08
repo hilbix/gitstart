@@ -4,7 +4,7 @@ export LC_ALL=C
 
 list()
 {
-for a in "$HOME/.ssh"/*.pub
+for a in "$HOME/.ssh"/*.pub "$HOME/.ssh/git"/*.pub
 do
 	ssh-keygen -l -f "${a%.pub}"
 done
