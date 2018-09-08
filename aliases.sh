@@ -189,18 +189,23 @@ a ddiff	'!git pager udiff'
 # Hightlight differences in blanks.  Solves: `git diff -b` is clean while `git diff` is not
 a cdiff	'!cdiff() { git diff --color "$@" | perl /usr/share/doc/git/contrib/diff-highlight/diff-highlight | less -XFR; }; cdiff'
 
-# Register all submodules which are missing in the index
+# Register all submodules which are missing in the index.
 # Why isn't there an option to `submodule init` for this?
 b submodules-register <<'EOF'
+# Safely extract the submodule keys.  You must use -z, as following cannot be parsed line by line:
+#	git submodule add . xxx && git mv xxx $'.\nsubmodule.fake.path err\n'
+# It's good to always test with filenames which end on $'\n' and also contain some fakey expected lines.
+# Luckily, keys cannot contain $'\n' nor NUL.  For example, following shows, this is unsupported (exposes a git bug?):
+#	git submodule add URL $'a\nb'
 git config -f .gitmodules -z --get-regexp '^submodule\..*\.path$' |
-sed -z 's/\n.$//' |
-tr '\0' '\n' |
+sed -z 's/\n.*$//' | tr '\0' '\n' |
 while read -r key;
 do
 	sub="${key%.path}";
-	pth="$(git config -f .gitmodules --get "$sub.path")" &&
+	pth="$(git config -f .gitmodules --get "$sub.path")x" &&
 	url="$(git config -f .gitmodules --get "$sub.url")" &&
-	if	bra="$(git config -f .gitmodules --get "$sub.branch")" &&
+	if	pth="${pth%x};	# protects against filenames with trailing $'\n'
+		bra="$(git config -f .gitmodules --get "$sub.branch")" &&
 		[ -n "$bra" ];
 	then
 		git submodule add -b "$bra" -- "$url" "$pth";
