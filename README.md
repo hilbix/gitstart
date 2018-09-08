@@ -24,7 +24,8 @@ This installs everything:
 - runs `aliases.sh`
 - runs `fix-bashrc.sh`
 - installs `gitstart-add.sh` as `~/.ssh/.add` (a location which can be easily found)
-- installs `git-carry.sh` in `~/bin/`
+- installs `gitstart-ls.sh` as `~/.ssh/.list` (a location which can be easily found)
+- installs `git-carry.sh` and `git-alias.sh` in `~/bin/`
 
 
 Usage:
@@ -65,6 +66,14 @@ This adds some GIT aliases.  Short documentation here:
 
 * `git find PATTERN`: search for `egrep`-`PATTERN` in the whole repository.  If `PATTERN` is missing, it just outputs all files (unsorted: what file)
 * `git qf PATTERN`: like `find` but re-uses an index for faster multiple searches of bigger repos (sorted: count what file)
+
+* `git su`: safe version of `git submodule update` like a safe `git reset --hard` on a submodule.  Missing features:
+  - Create submdoules which are missing (so it behaves like `git submodule --init` for missing submodules)
+  - Attach to a branch, if there is a suitable branch.
+  - Automatically `git ff` tracking branches of the submodule.
+  - Better reporting what is going on
+* `git submodules-register`: (re-)register submodules in the `config`.
+  (Fixes the case where `git reset`/`git read-tree` have `.gitmodules` in the `index` which are missing in the `config`.)
 
 Things which are very special to me:
 
