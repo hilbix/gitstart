@@ -120,7 +120,6 @@ $recurse && exec git su "${args[@]}";	# all is done, so we need not return
 subpath()
 {
 sub="${1#"$2"}";
-printf '# %q\n' "1=$1" "2=$2" "sub=$sub";
 case "$sub" in
 ('')	return 0;
 ("$1")	;;
