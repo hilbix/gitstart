@@ -39,27 +39,31 @@ while	IFS='' read -ru6 line
 do
 	a="${line:3}"
 	case "$a" in
-	(\"*\")	a="${a%\"}"; a="${a#\"}"; a="$(echo -e "$a"x)"; a="${a%x}";;
+	('"'*'"')	a="${a%\"}"; a="${a#\"}"; a="$(echo -e "$a"x)"; a="${a%x}";;
 	esac
 	b="${line:0:3}"
 	args=(--only)
+	s=squash
+	t=''
 	case "$b" in
-	' M ')	t=modified; git exec git add "$a";;
-	'M  ')	t=modified;;
-	'MM ')	t=modified; args=(--patch);;
+	' M ')	git exec git add "$a";;
+	'M  ')	;;
+	'MM ')	t=patched; args=(--patch);;
 	'?? ')	given "$a" "$@" || continue; t=added; git exec git add "$a";;
 	'A  ')	t=added;;
 	'AM ')	printf '#?%-7s? %q\n' STATE "$a"; continue;;
 	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
 	'D  ')	t=deleted;;
 	'R  ')	moved "$a"; continue;;
-	*)	OOPS unknown "$b:" "$a"
+	*)	OOPS unknown "$b:" "$a";;
 	esac
+	# Superfluous "git add"s above due to following:
 	case "$a" in
 	*/)	printf '#%-7s %q\n' STAGED "$a"; continue;;
 	esac
-	printf '#%-7s %q\n' "$t" "$a"
-	git exec git commit -m "squash! $a $t" "${args[@]}" "$a"
+	[ -z "$t" ] || s=
+	printf '#%-7s %q\n' "${t:-modified}" "$a"
+	git exec git commit -m "$s${s:+! }$a${t:+ }$t" "${args[@]}" "$a"
 done 6< <(git status --porcelain .)
 
 git status
