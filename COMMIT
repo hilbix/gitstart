@@ -22,6 +22,8 @@ done
 return 1
 }
 
+# This is wrong
+# We need to deescape here, too
 moved()
 {
 local f t
@@ -36,6 +38,9 @@ git exec git commit -m "$1" --only "$f" "$t"
 while	IFS='' read -ru6 line
 do
 	a="${line:3}"
+	case "$a" in
+	(\"*\")	a="${a%\"}"; a="${a#\"}"; a="$(echo -e "$a"x)"; a="${a%x}";;
+	esac
 	b="${line:0:3}"
 	args=(--only)
 	case "$b" in
@@ -44,6 +49,7 @@ do
 	'MM ')	t=modified; args=(--patch);;
 	'?? ')	given "$a" "$@" || continue; t=added; git exec git add "$a";;
 	'A  ')	t=added;;
+	'AM ')	printf '#?%-7s? %q\n' STATE "$a"; continue;;
 	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
 	'D  ')	t=deleted;;
 	'R  ')	moved "$a"; continue;;
