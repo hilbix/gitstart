@@ -43,8 +43,7 @@ do
 	esac
 	b="${line:0:3}"
 	args=(--only)
-	s=squash
-	t=''
+	t=modified
 	case "$b" in
 	' M ')	git exec git add "$a";;
 	'M  ')	;;
@@ -61,9 +60,10 @@ do
 	case "$a" in
 	*/)	printf '#%-7s %q\n' STAGED "$a"; continue;;
 	esac
-	[ -z "$t" ] || s=
-	printf '#%-7s %q\n' "${t:-modified}" "$a"
-	git exec git commit -m "$s${s:+! }$a${t:+ }$t" "${args[@]}" "$a"
+	msg="$a $t"
+	git exact "$msg" >/dev/null && [ modified = "$t" ] && msg="fixup! $msg"
+	printf '#%-7s %q\n' "$t" "$a"
+	git exec git commit -m "$msg" "${args[@]}" "$a"
 done 6< <(git status --porcelain .)
 
 git status

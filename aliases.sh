@@ -141,7 +141,8 @@ git su "${args[@]}" -- "${subs[@]}";
 :;
 EOF
 a up	status
-a squash rebase --interactive --autosquash
+a squash	rebase --interactive
+a fixup		rebase --interactive --autosquash
 
 #a fastforward # git fetch; git fastforward -> ff all branches which can do so, flag which cannot
 
