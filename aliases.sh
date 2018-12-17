@@ -149,7 +149,15 @@ a squash rebase --interactive --autosquash
 a amend-tag	'!f(){ [ 1 = $# ] || { echo "amend-tag needs tag name"; return 1; }; git tag -f -a -- "$1" "$1^{}"; }; f'
 
 # see https://stackoverflow.com/a/30286468
-a find	'!f(){ git log -C -M -B --pretty=format: --name-status --all | egrep "${@:-.}"; }; f'
+b find <<'find-EOF'
+ARGS=;
+for a in "${@-.}"; do ARGS="$ARGS)|($a"; done;
+git log -C -M -B --pretty=format:$'\t'%h --name-status --all |
+awk -vP="(${ARGS:3})" '
+/^[\t]/	{ sha=$1; next }
+$0 ~ P	{ print sha "\t" $0 }
+'
+find-EOF
 b qf <<'qf-EOF'
 cd "$GIT_DIR";
 x="$(find objects -type f | sort | md5sum)";
