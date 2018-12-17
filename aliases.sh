@@ -169,6 +169,25 @@ echo " done" >&2;
 };
 egrep "${@:-.}" < quickfind.list.tmp;
 qf-EOF
+# find SHAs of exact commit messages
+b exact <<'exact-EOF'
+# This format hopefully never changes
+git log --raw "${@:2}" |
+
+# Converts the log into some NUL terminated lines
+# Lines starting with a TAB are SHAs
+# as git commit messages never start with a TAB.
+awk '
+/^$/		{ printf "%c", 0; next }
+/^commit /	{ printf "\t%s", $2 }
+/^    /		{ sub(/^    /,""); print }' |
+
+# Now search for the exact commit message
+awk -vA="$1"$'\n' '
+BEGIN	{ RS=sprintf("%c",0) }
+/^[\t]/	{ sha=$1; next }
+$0==A	{ print sha }'
+exact-EOF
 
 # See https://stackoverflow.com/a/44973360
 b sdiff	<<'EOF'
