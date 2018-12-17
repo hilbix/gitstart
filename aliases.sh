@@ -155,8 +155,8 @@ for a in "${@-.}"; do ARGS="$ARGS)|($a"; done;
 git log -C -M -B --pretty=format:$'\t'%h --name-status --all |
 awk -vP="(${ARGS:3})" '
 /^[\t]/	{ sha=$1; next }
-$0 ~ P	{ print sha "\t" $0 }
-'
+$0 ~ P	{ print sha "\t" $0; ret=1 }
+END	{ exit 1-ret }'
 find-EOF
 b qf <<'qf-EOF'
 cd "$GIT_DIR";
@@ -186,7 +186,8 @@ awk '
 awk -vA="$1"$'\n' '
 BEGIN	{ RS=sprintf("%c",0) }
 /^[\t]/	{ sha=$1; next }
-$0==A	{ print sha }'
+$0==A	{ print sha; ret=1 }
+END	{ exit 1-ret }'
 exact-EOF
 
 # See https://stackoverflow.com/a/44973360
