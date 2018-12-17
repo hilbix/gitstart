@@ -2,7 +2,7 @@
 
 export LC_ALL=C.UTF-8 || export LC_ALL=C
 
-q() { sed -e '/^#/d' -e 's/[[:space:]]#[[:space:]].*$//' -e "s/'/'\\\\''/g" -e 's/\t\t*/ /g' | tr '\n' '\t'; }
+q() { sed "s/'/'\\\\''/g"; }
 s() { git config --global --replace-all "$1" "${*:2}"; }
 a() { s "alias.$@"; }
 # bash wrapper
