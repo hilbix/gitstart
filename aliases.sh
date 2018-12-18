@@ -49,7 +49,8 @@ EOF
 # Same for tags
 a tv	"!{ git tag --no-column | while read -r tag; do echo \"\$(git rev-parse \"refs/tags/\$tag\" || echo .)	\$tag\"; done; git remote | while read -r n; do echo -n \":: \$n\" >&2; git ls-remote --tags \"\$n\" | grep -vG '\\^{}\$' | awk -F'\\t' -vN=\"\$n\" '{ sub(/^[^/]*\/[^/]*/,\"\",\$2); print \$1 \"\\t/\" N \$2 }'; done; echo >&2; } | sort -r | awk '{ if (!f[\$1]) { f[\$1]=\$2; if (mx<length(\$2)) mx=length(\$2); } else { l=length(\$2)-length(f[\$1]); if (\"/\"f[\$1]!=substr(\$2,l)) l=length(\$2); m[\$1]=m[\$1] \" \" substr(\$2,0,l); } } END { for (a in f) printf(\"%s %-*s %s\\n\", a, mx, f[a], m[a]); }' | sort"
 a check	diff --check
-a co	checkout
+b contained	<<<'[ -n "$(git branch --list --contains "${*-HEAD}" 2>/dev/null | sed -e "s/^..//" -e "/^(/d")" ] && exit; printf "FAIL: %q is not on a branch\\n" "${*-HEAD}" >&2; exit 1'
+a co	'!git contained && git checkout'
 a ff	merge --ff-only --
 a pager	'!pager() { cd "$GIT_PREFIX" && git -c color.status=always -c color.ui=always "$@" 2>&1 | less -XFR; }; pager'
 a pageat '!pager() { at="$1" && shift && cd "$GIT_PREFIX" && git -c color.status=always -c color.ui=always "$@"  2>&1 | less -XFRp "$at"; }; pager'
@@ -103,16 +104,13 @@ at="$(git rev-parse HEAD)";
 [ ".$at" = ".$was" ] || { printf 'fast forward %q..%q\n' "$was" "$at"; };
 [ ".$at" = ".$sha" ] ||
 if	# We are not at the wanted SHA, looks like it moves backward.
-	contained="$(git branch --list --contains | sed -e 's/^..//' -e '/^(/d' -e '2q')";
-	[ -n "$contained" ];
+	git contained "$at";
 then
 	# sha is contained in some branch, so we can safely move downward
 	git checkout --detach;
 	git reset --hard "$sha";
-	act="jumped"; [ ".$sha" = ".$(git merge-base "$sha" "$at")" ] && act="moved backward";
+	[ ".$sha" = ".$(git merge-base "$sha" "$at")" ] && act="moved backward" || act=jumped;
 	printf '%s from %q\n%s to   %q\n' "$act" "$at" "$act" "$sha";
-else
-	printf 'FAIL: %q is not on a branch\n' "$at";
 fi;
 $recurse && exec git su "${args[@]}";	# all is done, so we need not return
 };
@@ -292,7 +290,7 @@ a dir	'!f() { cd "$GIT_DIR" && exec "${@:-"$SHELL"}"; }; f'		# enter/run in asso
 
 # Switch to another branch, just moving head and NOT affecting workdir
 # See https://stackoverflow.com/a/45060070
-a switch '!f() { git rev-parse --verify "$*" && git checkout "HEAD^{}" && git reset --soft "$*" && git checkout "$*"; }; f'
+a switch '!f() { git contained && git rev-parse --verify "$*" && git checkout "HEAD^{}" && git reset --soft "$*" && git checkout "$*"; }; f'
 
 # See https://gist.github.com/hilbix/7703225
 # Basic idea from https://gist.github.com/jehiah/1288596
