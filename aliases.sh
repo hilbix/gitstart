@@ -267,7 +267,7 @@ do
 	if [ -z "$b" ]; then b="Fake-Merge"; else b="$b $a,"; fi;
 done;
 ob="$(git write-tree)" || { echo "git-write-tree failed, aborting" >&2; exit 1; };
-cc="$(git commit-tree "${P[@]}" -m "${b:0:-1}" "$ob")" && git ff "$cc"
+cc="$(git commit-tree "${P[@]}" -m "${b:0:-1} into $(git rev-parse --abbrev-ref HEAD)" "$ob")" && git ff "$cc"
 EOF
 
 
