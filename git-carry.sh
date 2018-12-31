@@ -180,7 +180,7 @@ diff=:
 help=false
 while
 	$list && lister "$list"
-	$diff && sep "diff $1" git show "$1"
+	$diff && sep "diff $1" git show -b "$1"
 	{ $list && $diff; } || sep "file list" git show --oneline --no-notes --name-status "$1"
 	list=false
 	diff=false
