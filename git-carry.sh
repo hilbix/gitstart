@@ -81,7 +81,11 @@ awk -v CARRY="$CARRY" -v FULL="$1" '
 BEGIN			{
 			while ((getline < CARRY)>0)
 				if (!/^[[:space:]]*$/ && ! /^[[:space:]]*#/)
+					{
 					nocarry[$1]=$0;
+					if ($2=="AUTOIGN")
+						had[$1]=1;
+					}
 			want=0;
 			}
 
@@ -339,6 +343,14 @@ ARG2="${ARG2#refs/}"
 
 CARRY="$DIR/$ARG1/$ARG2"
 mkdir -p "${CARRY%/*}"
+
+# automatically ignore known cherry-picks
+
+>> "$CARRY"
+git log "$ARG1" |
+sed -n 's/^[[:space:]]*(cherry picked from commit \([^[:space:]]*\))[[:space:]]*$/\1 AUTOIGN/p' |
+fgrep -vxf "$CARRY" >> "$CARRY" || :
+
 
 # Run all the possible picks displayed by "git cherry"
 
