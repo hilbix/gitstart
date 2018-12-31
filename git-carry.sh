@@ -171,7 +171,7 @@ SKIPS=""
 : addpick SHA comment
 addpick()
 {
-[ -n "$next" ] || { read -r flg sha note < <(huntpicks | grep ^+ | fgrep -vxf <(echo "$SKIPS")); next="$flg $sha"; note "next: $next"; }
+[ -n "$next" ] || { read -r flg sha note < <(huntpicks true | grep ^+ | fgrep -vxf <(echo "$SKIPS")) && next="$flg $sha" || next=; note "next: $next"; }
 [ "+ $1" = "$next" ] || { note "skipping $1 $2"; return; }
 next=""
 
@@ -244,7 +244,7 @@ while
 	sep "pick conflicts" git status
 	$diff && sep "diff $1" diff-combined
 	diff=false
-	$help && echo && echo " try: Diff Vim/Edit Continue Undo(Abort) eXit"
+	$help && echo && echo "/try: Diff Vim/Edit Continue Undo(Abort) eXit"
 	help=false
 	read -rsN1 -p"$* [dvecuax]? " ans </dev/tty || exit
 do
@@ -279,7 +279,7 @@ ignore "$1" "see $(git rev-parse HEAD)"
 ignore()
 {
 echo "$1 `date +%Y%m%d-%H%M%S` ${*:2}" >> "$CARRY"
-git commit -m "updated $CARRY" "$CARRY"
+git commit -m "updated $CARRY" "$CARRY" || :
 }
 
 # Remove some SHA from the .gitcarray file
@@ -350,7 +350,7 @@ do
 	warn)	rmpick "$sha" "$note"; continue;;
 	+)	addpick "$sha" "$note"; continue;;
 	*)	OOPS "unkown flag: $flg";;
-	esac
+	esac 6<&-
 done 6< <(huntpicks true)
 
 # See TODO above
