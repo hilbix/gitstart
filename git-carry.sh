@@ -178,6 +178,10 @@ addpick()
 [ -n "$next" ] || { read -r flg sha note < <(huntpicks true | grep ^+ | fgrep -vxf <(echo "$SKIPS")) && next="$flg $sha" || next=; note "next: $next"; }
 [ "+ $1" = "$next" ] || { note "skipping $1 $2"; return; }
 next=""
+while read -ru6 picks
+do
+	git merge-base --is-ancestor "$picks" "$ARG1" && { SKIPS="$SKIPS+ $*"$'\n'; note "our $1 $2"; return; }
+done 6< <(git cat-file -p "$1" | sed -n 's/^(cherry picked from commit \([^)]*\)).*$/\1/p')
 
 list=:
 diff=:
@@ -195,8 +199,7 @@ do
 	echo "$ans"
 	case "$ans" in
 	c|C)	cherry "$1" && break;;
-	s|S)	SKIPS="$SKIPS+ $*
-"; break;;
+	s|S)	SKIPS="$SKIPS+ $*"$'\n'; break;;
 	i|I)	ignore "$1" "manually ignored"; break;;
 	d|D)	diff=:;;
 	l|L)	list=true;;
