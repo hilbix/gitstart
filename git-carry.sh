@@ -286,7 +286,7 @@ ignore "$1" "see $(git rev-parse HEAD)"
 ignore()
 {
 echo "$1 `date +%Y%m%d-%H%M%S` ${*:2}" >> "$CARRY"
-git commit -m "updated $CARRY" "$CARRY" || :
+git commit -m "fixup! $CARRY modified" "$CARRY" || :
 }
 
 # Remove some SHA from the .gitcarray file
