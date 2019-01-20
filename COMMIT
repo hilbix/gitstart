@@ -61,7 +61,7 @@ do
 	*/)	printf '#%-7s %q\n' STAGED "$a"; continue;;
 	esac
 	msg="$a $t"
-	git exact "$msg" >/dev/null && [ modified = "$t" ] && msg="fixup! $msg"
+	git exact -m "$msg" >/dev/null && [ modified = "$t" ] && msg="fixup! $msg"
 	printf '#%-7s %q\n' "$t" "$a"
 	git exec git commit -m "$msg" "${args[@]}" "$a"
 done 6< <(git status --porcelain .)
