@@ -4,13 +4,19 @@ export LC_ALL=C
 
 # Only list for now
 
-git config --get-regexp ^alias |
+git config --null --get-regexp ^alias |
 awk -vWIDTH="`tput cols`" '
+BEGIN	{
+	RS=sprintf("%c", 0);
+	}
 	{
 	sub(/^alias\./,"");
-	a[$1]=$0;
-	n[$1] = $1;
-	if (max<length($1)) max=length($1);
+	c=$1;
+	n[c] = c;
+	l	= length(c);
+	if (l<15 && max<l) max=l;
+	sub(/^[^[:space:]]*[[:space:]]/,"");
+	a[c] = $0;
 	}
 END	{
 	k = asort(n);
@@ -18,30 +24,50 @@ END	{
 		{
 		b=n[i];
 		c=a[b];
-		sub(/^[^[:space:]]*[[:space:]]/,"",c);
 		indent(b,c);
 		}
 	}
 
-function indent(b,s, p,w,c)
+function indent(b,s, p,w,c,n,o,x,k)
 {
-w = WIDTH - max - 3;
+n	= max + 8-((max+1)%8);
+c = sprintf("%*s#", n, " ");
+p = sprintf("%-*s", n+1, b ":");
+if (length(b)>n)
+  {
+    printf("%s: \\\n", b);
+    p = c;
+  }
+
+w = WIDTH - n - 2;
 if (w<40)
   w = 40;
 
-p = sprintf("%-*s", max, b);
-c = sprintf("%*s", max, "");
-for (;;)
+s = s "\n";
+do
 	{
-	if (length(s)<=w)
+	o	= s;
+	gsub(/\n.*$/,"",o);
+	for (k=w;; k--)
 		{
-		print p "  " s;
-		return;
+		o	= substr(o,1,k);
+		x	= o;
+		gsub(/\t/,"        ",x);
+		if (length(x)<=w || k<3)
+			break;
 		}
-	printf("%s  %s\\\n", p, substr(s,1,w-1));
-	s = substr(s,w);
+	# make room for \\ when it is needed
+	n	= length(o);
+	if (n>=k && (substr(s,n+1,1)!="\n" || o ~ /\\$/))
+	  o	= substr(o,1,--n);
+	if (substr(s,n+1,1)!="\n" || o ~ /\\$/)
+	  o	= o "\\";
+	else
+	  n++;
+	printf("%s %s\n", p, o);
+	s = substr(s,n+1);
 	p = c;
-	}
+	} while (s!="");
 }
 ' |
 
