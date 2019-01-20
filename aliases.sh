@@ -14,7 +14,7 @@ a amend	commit --amend
 a amit	commit --amend -C HEAD
 a bvv	branch -avv
 b bv.ign <<<'for a; do git config --local --get-all ignore.bv | fgrep -qx "$a" || git config --local --add ignore.bv "$a"; done'
-b bv	<<'EOF'
+b bv	<<'EOF-bv'
 for a; do git config --local --unset ignore.bv "$a"; done;
 {
 git config --get-all ignore.bv | sed 's/^/d/';
@@ -45,9 +45,44 @@ END	{
 	}' |
 sort -bk2 |
 sed 's/^x//'
-EOF
+EOF-bv
 # Same for tags
-a tv	"!{ git tag --no-column | while read -r tag; do echo \"\$(git rev-parse \"refs/tags/\$tag\" || echo .)	\$tag\"; done; git remote | while read -r n; do echo -n \":: \$n\" >&2; git ls-remote --tags \"\$n\" | grep -vG '\\^{}\$' | awk -F'\\t' -vN=\"\$n\" '{ sub(/^[^/]*\/[^/]*/,\"\",\$2); print \$1 \"\\t/\" N \$2 }'; done; echo >&2; } | sort -r | awk '{ if (!f[\$1]) { f[\$1]=\$2; if (mx<length(\$2)) mx=length(\$2); } else { l=length(\$2)-length(f[\$1]); if (\"/\"f[\$1]!=substr(\$2,l)) l=length(\$2); m[\$1]=m[\$1] \" \" substr(\$2,0,l); } } END { for (a in f) printf(\"%s %-*s %s\\n\", a, mx, f[a], m[a]); }' | sort"
+b tv.ign <<<'for a; do git config --local --get-all ignore.tv | fgrep -qx "$a" || git config --local --add ignore.tv "$a"; done'
+b tv <<'EOF-tv'
+for a; do git config --local --unset ignore.tv "$a"; done;
+{
+while read -ru6 tag; do printf '%s\t%s\n' "$(git rev-parse "refs/tags/$tag" || echo .)" "$tag"; done 6< <(git tag --no-column);
+while read -ru6 n;
+do
+	printf '/%q/' "$n" >&2;
+	git config --get-all ignore.tv | fgrep -qx "/$n/" && { printf ':ign ' >&2; continue; }
+	{
+	trap 'printf "try: git tv.ign /%q/\n" "$n" >&2; exit 1' SIGINT;
+	if	git ls-remote --tags "$n" 2>/dev/null;
+	then
+		printf ':ok ' >&2;
+	else
+		printf '=%s ' $? >&2
+	fi;
+	} |
+	grep -vG '\^{}$' |
+	awk -F'\t' -vN="$n" '{ sub(/^[^/]*\/[^/]*/,"",$2); print $1 "\t/" N $2 }';
+done 6< <(git remote);
+echo >&2;
+} |
+sort -r |
+awk '
+	{
+	if (!f[$1])	{ f[$1]=$2; if (mx<length($2)) mx=length($2); }
+	else		{ l=length($2)-length(f[$1]);
+			  if ("/"f[$1] != substr($2,l)) l=length($2);
+			  m[$1]=m[$1] " " substr($2,0,l);
+			}
+	}
+END	{ for (a in f) printf("%s %-*s %s\n", a, mx, f[a], m[a]); }
+' |
+sort
+EOF-tv
 a check	diff --check
 b contained	<<<'[ -n "$(git branch --list --contains "${*-HEAD}" 2>/dev/null | sed -e "s/^..//" -e "/^(/d")" ] && exit; printf "FAIL: %q is not on a branch\\n" "${*-HEAD}" >&2; exit 1'
 a co	'!git contained && git checkout'
@@ -59,6 +94,7 @@ a ls	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --deco
 a ll	'!cd "$GIT_PREFIX" && git pager log --color=always --graph --oneline --decorate --numstat'
 a la	'!cd "$GIT_PREFIX" && git pager log --color=always --graph -u --decorate'
 a st	'!cd "$GIT_PREFIX" && git pager status'
+b isclean <<<'ok="$(git status --porcelain)" && [ -z "$ok" ] && exit; printf "${@:-$'\''not clean\n'\''}"; exit 1'
 a ss	'!cd "$GIT_PREFIX" && git pager submodule summary'
 # not easy to pass additional parameters to subnodule foreach, when you need '$toplevel' etc.
 # git su: update all
@@ -95,7 +131,7 @@ esac;
 update()
 {
 # check if it is dirty, if so, do not change (as we are editing)
-ok="$(git status --porcelain)" && [ -z "$ok" ] || { printf '\n# Not clean!\n# MODULE %q\nPATH %q\n' "$pat" "$top" >&2; exit 1; };
+git isclean '\n# Not clean!\n# MODULE %q\nPATH %q\n' "$pat" "$top" >&2 || exit;
 # first try some ff to the given SHA
 was="$(git rev-parse HEAD)";
 [ ".$was" = ".$sha" ] && printf 'ok %q\n' "$sha";
@@ -168,8 +204,21 @@ echo " done" >&2;
 };
 egrep "${@:-.}" < quickfind.list.tmp;
 qf-EOF
-# find SHAs of exact commit messages
+# find SHAs of exact commit messages:
+# git exact [MESSAGE|-C COMMITISH] [HEAD|--all|RANGE]
 b exact <<'exact-EOF'
+HEAD=HEAD
+SUFFIX=
+[ -n "$1" ] || set -- -C "$HEAD" "${@:2}"
+[ 2 -le $# ] &&
+case "$1" in
+(-c)	shift; true;;
+(-C)	shift; HEAD="${1:-$HEAD}"; SUFFIX='^'; true;;
+(-m)	shift; false;;
+(*)	false;;
+esac && set -- "$(git cat-file -p "${ARGS[0]:-$HEAD}" | sed '0,/^$/d')" "${@:2}";
+[ -z "$2" ] && set -- "$1" "$(git rev-parse --verify "$HEAD@{u}" >/dev/null 2>&1 && echo "$HEAD@{u}..")$HEAD$SUFFIX" "${@:3}";
+
 # This format hopefully never changes
 git log --raw "${@:2}" |
 
@@ -295,7 +344,17 @@ a switch '!f() { git contained && git rev-parse --verify "$*" && git checkout "H
 # See https://gist.github.com/hilbix/7703225
 # Basic idea from https://gist.github.com/jehiah/1288596
 # f() trick from http://stackoverflow.com/questions/7005513/pass-an-argument-to-a-git-alias-command
-a relate '!f(){ x="$1"; case "$#" in 0|1) git for-each-ref --format="%(refname:short) %(upstream:short)" refs;; *) shift; for a in "$@"; do echo "$a"; done;; esac | while read -r l r; do printf "%24s %s\\n" "$(git rev-list --cherry-mark --dense --left-right --boundary --oneline "${x:-${r:-HEAD}}...$l" -- | sed "s/^\\(.\\).*/\\1/" | sort | uniq -c | tr -d " " | tr "\\n" " ")" "${x:-${r:-HEAD}}...$l"; done; }; f'
+b relate <<'EOF-relate'
+x="$1";
+case "$#" in
+0|1)	git for-each-ref --format="%(refname:short) %(upstream:short)" refs;;
+*)	shift; for a in "$@"; do echo "$a"; done;;
+esac |
+while read -r l r;
+do
+	printf "%24s %s\\n" "$(git rev-list --cherry-mark --dense --left-right --boundary --oneline "${x:-${r:-HEAD}}...$l" -- | sed "s/^\\(.\\).*/\\1/" | sort | uniq -c | tr -d " " | tr "\\n" " ")" "${x:-${r:-HEAD}}...$l";
+done;
+EOF-relate
 a dograph '!graph(){ case "$#:$3" in 2:) r="HEAD...HEAD@{u}";; 3:*...*) r="$3";; 3:*) r="HEAD...$3";; *) r="$3...$4";; esac; r1="$(git rev-parse "${r%%...*}")"; r2="$(git rev-parse "${r##*...}")"; echo "$r - $r1 - $r2"; r1s=" $(git rev-parse --short "$r1") "; eval "v=\"\$$1\""; if [ ".$r1" = ".$r2" ]; then git pageat "${v# }" log --color=always $2 -1 "$r1"; else git pageat "$v" rev-list --color=always --cherry-mark --dense --left-right --boundary $2 --graph "$r1...$r2" --; fi; }; graph'
 a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
