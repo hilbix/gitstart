@@ -118,6 +118,7 @@ Not yet implemented (perhaps upcomming, so it is already registered but not impl
 
 * `git ssh`: ssh key management
 * `git note`: notes for branches
+* `git hub`: interface to GitHUB API advanced commands
 
 Rationale:
 ----------
