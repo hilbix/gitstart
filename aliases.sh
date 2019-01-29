@@ -20,7 +20,7 @@ for a; do git config --local --unset ignore.bv "$a"; done;
 git config --get-all ignore.bv | sed 's/^/d/';
 git branch -avv | sed 's/^/x/';
 } |
-awk '
+gawk '
 /^d/							{ a=substr($0,2); ign[a]=1; b=a; sub(/[^/]*$/,"",b); c=substr($0,2+length(b)); if (b=="") b="(local)"; m[b]="ignored"; f[b]="branch:"; k[b]=k[b] " " c; next }
 $2=="(detached" && $3=="from" && $4==$5")"		{ $2="HEAD"; $3=$5; }
 $2=="(HEAD" && $3=="detached" && $4=="at" && $5==$6")"	{ $2="HEAD"; $3=$6; }
@@ -66,12 +66,12 @@ do
 	fi;
 	} |
 	grep -vG '\^{}$' |
-	awk -F'\t' -vN="$n" '{ sub(/^[^/]*\/[^/]*/,"",$2); print $1 "\t/" N $2 }';
+	gawk -F'\t' -vN="$n" '{ sub(/^[^/]*\/[^/]*/,"",$2); print $1 "\t/" N $2 }';
 done 6< <(git remote);
 echo >&2;
 } |
 sort -r |
-awk '
+gawk '
 	{
 	if (!f[$1])	{ f[$1]=$2; if (mx<length($2)) mx=length($2); }
 	else		{ l=length($2)-length(f[$1]);
@@ -188,7 +188,7 @@ b find <<'find-EOF'
 ARGS=;
 for a in "${@-.}"; do ARGS="$ARGS)|($a"; done;
 git log -C -M -B --pretty=format:$'\t'%h --name-status --all |
-awk -vP="(${ARGS:3})" '
+gawk -vP="(${ARGS:3})" '
 /^[\t]/	{ sha=$1; next }
 $0 ~ P	{ print sha "\t" $0; ret=1 }
 END	{ exit 1-ret }'
@@ -225,13 +225,13 @@ git log --raw "${@:2}" |
 # Converts the log into some NUL terminated lines
 # Lines starting with a TAB are SHAs
 # as git commit messages never start with a TAB.
-awk '
+gawk '
 /^$/		{ printf "%c", 0; next }
 /^commit /	{ printf "\t%s", $2 }
 /^    /		{ sub(/^    /,""); print }' |
 
 # Now search for the exact commit message
-awk -vA="$1"$'\n' '
+gawk -vA="$1"$'\n' '
 BEGIN	{ RS=sprintf("%c",0) }
 /^[\t]/	{ sha=$1; next }
 $0==A	{ print sha; ret=1 }
