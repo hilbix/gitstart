@@ -194,7 +194,7 @@ $0 ~ P	{ print sha "\t" $0; ret=1 }
 END	{ exit 1-ret }'
 find-EOF
 b qf <<'qf-EOF'
-cd "$GIT_DIR";
+cd "$(git dir /bin/pwd)";
 x="$(find objects -type f | sort | md5sum)";
 cmp -s quickfind.status.tmp <<<"$x" ||
 {
@@ -323,6 +323,7 @@ a exec	'!exec '
 a make	'!exec make'
 # See https://gist.github.com/hilbix/7724772
 b top	<<'top-EOF'
+GIT_DIR="$(git dir /bin/pwd)";
 GIT_TOP="${GIT_DIR%%/.git/modules/*}";
 [ ".$GIT_TOP" != ".$GIT_DIR" ] && cd "$GIT_TOP";
 unset GIT_DIR;
@@ -335,7 +336,7 @@ a tig	!tig --all
 
 a run	'!f() { cd "$GIT_PREFIX" && exec "$@"; }; f'			# Like 'git exec' but stay in current directory
 a bash	'!f() { cd "$GIT_PREFIX" && exec bash -c "${*:-set}"; }; f'	# "git bash x" is short for "git run bash -c x" where x defaults to "set"
-a dir	'!f() { cd "$GIT_DIR" && exec "${@:-"$SHELL"}"; }; f'		# enter/run in associated GIT_DIR
+b dir	<<<'cd "${GIT_DIR:-"$(git rev-parse --git-dir)"}" && exec "${@:-"$SHELL"}"'	# enter/run in associated GIT_DIR
 
 # Switch to another branch, just moving head and NOT affecting workdir
 # See https://stackoverflow.com/a/45060070
