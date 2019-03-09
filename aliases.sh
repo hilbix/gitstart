@@ -327,7 +327,7 @@ GIT_DIR="$(git dir /bin/pwd)";
 GIT_TOP="${GIT_DIR%%/.git/modules/*}";
 [ ".$GIT_TOP" != ".$GIT_DIR" ] && cd "$GIT_TOP";
 unset GIT_DIR;
-exec "$@";
+exec "${@:-/bin/pwd}";
 top-EOF
 
 s tig.show-rev-graph yes
