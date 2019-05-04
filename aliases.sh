@@ -102,11 +102,13 @@ a ss	'!cd "$GIT_PREFIX" && git pager submodule summary'
 # git su path/: update all in this path, not this path
 # git su -r: update all recursively
 # git su -r path: update only path
+# git su -i: ignore errors
+# git su -q: quiet
 b su <<'su-EOF'
 cd "$GIT_PREFIX" || exit;
 args='';
 [ 0 = $# ] || printf -vargs " %q" "$@";
-git pager submodule foreach 'git sane-submodule-update-from-submodule-foreach "$toplevel" "$path" "$name" "$sha1"'"$args"
+git pager submodule -q foreach 'git sane-submodule-update-from-submodule-foreach "$toplevel" "$path" "$name" "$sha1"'"$args"
 su-EOF
 # 'git submodule update' is insane, as it just cuts the current leaf of the submodule,
 # regardless if it gets lost or not.
@@ -119,22 +121,33 @@ sha="$4";
 shift 4 || exit;
 args=();
 recurse=false;
-case "$1" in
--r*|--r*)	args=(--recursive); recurse=:; shift;;	# I am lazy
-esac;
+ignore=false;
+quiet=false;
+dirt='\n';
+while	case "$1" in	# I am lazy
+	-r*|--r*)	args+=(--recursive); recurse=:; true;;
+	-i*|--i*)	args+=(--ignore); ignore=true; true;;
+	-q*|--q*)	args+=(--quiet); quiet=true; dirt=; true;;
+	-*)		echo "Usage: git su [-recursive|-ignore|-quiet] [--] [path..]" >&2; exit 1;;
+	*)		false;;
+	esac;
+do
+	shift;
+done;
 case "$1" in
 --)		shift;;			# Do not harm others with my laziness.
 esac;
 [ 0 = $# ] && set -- '';
+$quiet || printf "Entering '%q'\\n" "$pat";
 
 # Move this here to given $sha
 update()
 {
 # check if it is dirty, if so, do not change (as we are editing)
-git isclean '\n# Not clean!\n# MODULE %q\nPATH %q\n' "$pat" "$top" >&2 || exit;
+git isclean "$dirt"'# MODULE not clean: %q/%q\n'"$dirt" "$top" "$pat" >&2 || { $ignore || exit; return 1; }
 # first try some ff to the given SHA
 was="$(git rev-parse HEAD)";
-[ ".$was" = ".$sha" ] && printf 'ok %q\n' "$sha";
+[ ".$was" = ".$sha" ] && { $quiet || printf 'ok %q\n' "$sha"; };
 git ff "$sha" >/dev/null;
 at="$(git rev-parse HEAD)";
 [ ".$at" = ".$was" ] || { printf 'fast forward %q..%q\n' "$was" "$at"; };
