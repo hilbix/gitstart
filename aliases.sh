@@ -9,6 +9,171 @@ a() { s "alias.$@"; }
 b() { a "$1" "!LC_ALL=$LC_ALL bash -c  '$(q)' --"; }
 x() { a "$1" "!LC_ALL=$LC_ALL bash -xc '$(q)' --"; }
 
+# Ask the user a Y/N question, where the default is N
+# $1 is meant to be the storage key for .git/config in format name.$KEY.tag
+# $1==false is an alias for /bin/false
+# Improvements for future:
+# - L remember local
+# - G remember global
+# - `git confim` lists known choices
+b confirm <<'EOF-confirm'
+{
+[ false != "$1" ] || exit;
+printf '%q:' "${1%%.*}" && printf ' %q' "${@:2}" && printf ' [y/n]? ' &&
+read -sn1 ans &&
+case "$ans" in ([yY]) printf 'Yes\n'; exit 0;; esac;
+printf 'No\n';
+} >&2;
+exit 1;
+EOF-confirm
+
+# Mirror your dev-tree to the given directory
+b mirror <<'EOF-mirror'
+DIR="$(git config --local --get mirror.dir 2>/dev/null)" ||
+DIR="$(git top git config --get mirror.dir 2>/dev/null)"
+ASK="git confirm";
+while	case "$1" in
+	(-y)	ASK=:;;
+	(*)	false;;
+	esac;
+do shift; done;
+case "$#:$1" in (1:.) set -- "${DIR:-"$(readlink -m "$HOME/gitmirror")"}" || exit;; esac;
+case "$#" in
+(0)	[ -z "$DIR" ] || { set -- "$DIR" && $ASK mirror."$DIR".default use "$DIR" || exit; }; false;;
+(1)	NEW="$(readlink -m -- "$1")" && [ ! -e "$NEW" -o -d "$NEW" ] || { printf 'not usable: %q\n' "$1" >&2; exit 1; };
+	TOP="$(git top)" || exit;
+	case "$NEW" in ("$TOP"|"$TOP/"*) printf 'target must be outside of git tree: %q\n' "$TOP" >&2; exit 1;; esac;
+	set -- "$NEW";
+	if [ -z "$DIR" ];
+	then
+		$ASK mirror."$NEW".default set "$NEW" as default;
+	elif	[ ".$NEW" = ".$DIR" ];
+	then
+		false;
+	else
+		$ASK mirror."$NEW".default replace default "$DIR" with "$NEW";
+	fi;;
+(*)	false;;
+esac &&
+{
+set -- "$NEW";  # NOT redundant
+[ ! -e "$NEW" -o -d "$NEW" ] || { printf 'not usable: %q\n' "$1" >&2; exit 1; };
+git config --local mirror.dir "$NEW";
+}
+[ 1 = $# ] || { printf 'Usage: git mirror [-y] [DIR|.] -- recursively mirror submodule devtree into dir\n' >&2; exit 42; };
+
+# see https://github.com/hilbix/tino/blob/46c7cf43d04ffd9bb9f647102408b0c5c9c1bcbf/datenschutz/security.md#verified
+
+MIRROR="$1";
+if [ ! -d "$MIRROR" ]; then $ASK mirror."$MIRROR".create create "$MIRROR/" && mkdir -p "$MIRROR" || exit; fi;
+
+git-do() { HOME="$MIRROR" GIT_CONFIG_NOSYSTEM=1 git "$@"; }
+
+git-all()
+{
+git-do "$@";
+git-do submodule -q foreach --recursive "git $(printf ' %q ' "$@")";
+}
+
+OOPS()
+{
+{
+printf '\nOOPS:'
+printf ' %q' "$@";
+printf '\n\n'
+} >&2;
+exit 23;
+}
+
+o-git-all()
+{
+git-all "$@" || OOPS failed: "$@"
+}
+
+cleanup()
+{
+{
+"$@";
+echo "#END#"$'\t'"$?";
+} 2>&1 |
+{
+ret=;
+while IFS=$'\t' read -r a b c;
+do
+	ret=;
+	if [ -z "$b$c" ]
+	then
+		b="${a%% *}";
+		c="${a#"$b"}";
+		case "$b $c" in
+		('To '*)	printf o; targ="${c#"$MIRROR/git/"}"; continue;;
+		('Done ')	continue;;
+		esac;
+	else
+		case "$a" in
+		('#END#')	ret="$b"; continue;;
+		('=')		printf _; continue;;
+		('*')		printf +; continue;;
+		(' ')		printf u; continue;;
+		('+')		printf F; continue;;
+		esac;
+	fi
+	printf '\n';
+	OOPS unexpected output: "$a" -- "$b" -- "$c";
+done;
+printf '\n';
+case "$ret" in
+('')	OOPS "missing end marker";;
+(0)	return 0;;
+(*)	return 1;;
+esac;
+}
+}
+
+# 1st: Create the ".insteadOf" entries, using the mirror directory
+MIRROR="$MIRROR/nope" git-all remote get-url --push origin |
+sed -n -e 's/:[^/].*$/:/p' -e 's!\([^/]\)/[^/].*$!\1/!p' |
+sort -u |
+while read -r a; do
+  b="${a/:/}"; b="${b/\/\//_}"; b="${b//:/_}";
+  HOME="$MIRROR" git config --global "url.$MIRROR/git/${b%/}/.insteadOf" "$a";
+done;
+
+# 2nd: Create the bare repositories for storage in it
+MIRROR="$MIRROR/nope" git-all remote get-url --push origin |
+while read -r a; do
+  b="${a/:/}"; b="${b/\/\//_}"; b="${b//:/_}";
+  [ -d "$MIRROR/git/$b" ] || git-do init --bare "$MIRROR/git/$b";
+done;
+
+#git-do config --global push.default current;
+git-do config --global push.default nothing;
+
+# forces an update the mirror to act as "origin"
+printf 'P';
+cleanup o-git-all push --force --porcelain origin 'refs/remotes/origin/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
+
+# Also "backup" current local branches
+# XXX TODO XXX T.B.D.
+# To safe:  refs/*:refs/host/$(hostname -f)/$LOCATION/*
+#git-all push --force --porcelain origin "refs/stash/*:refs/stash/*";
+#git-all push --quiet --porcelain origin 'refs/remotes/*:refs/mirror/remotes/*';
+#git-all push --quiet --porcelain origin "refs/heads/*:refs/host/$(hostname -f)/*";
+
+# Now check for inconsistencies
+# This should not output anything!
+
+printf 'B';
+cleanup git-all push --porcelain origin 'refs/remotes/origin/*:refs/heads/*' ||
+OOPS try: 'git remote update -p && git submodule --recursive foreach git remote update -p';
+
+printf 'T';
+cleanup git-all push  --porcelain origin "refs/tags/*:refs/tags/*" ||
+OOPS tags are inconsistent.  You must manually repair this.;
+
+echo "WARNING: Mirroring is preliminary (and terribly incomplete)"
+EOF-mirror
+
 a alias	!git-alias.sh
 a amend	commit --amend
 a amit	commit --amend -C HEAD
@@ -128,7 +293,7 @@ while	case "$1" in	# I am lazy
 	-r*|--r*)	args+=(--recursive); recurse=:; true;;
 	-i*|--i*)	args+=(--ignore); ignore=true; true;;
 	-q*|--q*)	args+=(--quiet); quiet=true; dirt=; true;;
-	-*)		echo "Usage: git su [-recursive|-ignore|-quiet] [--] [path..]" >&2; exit 1;;
+	-*)		echo "Usage: git su [-recursive|-ignore|-quiet] [--] [path..]" >&2; exit 42;;
 	*)		false;;
 	esac;
 do
