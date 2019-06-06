@@ -133,7 +133,7 @@ then
 	ln -v "$SSHDIR/$OLDNAME".pub "$DIR/$GITNAME".pub
 	# To really move it we would need to remove old clutter from ~/.ssh/config, no way, sorry
 else
-	ssh-keygen -qt rsa -C "$GITNAME" -f "$DIR/$GITNAME" -N '' </dev/null
+	ssh-keygen -qt ed25519 -C "$GITNAME" -f "$DIR/$GITNAME" -N '' </dev/null
 fi &&
 
 cat <<EOF >> "$SSHDIR/config"
