@@ -88,7 +88,7 @@ EOF
 fi
 
 case "$GITACCOUNT" in
-*[^-_./:a-zA-Z0-9]*)	echo "OOPS: unclear character in $GITACCOUNT" >2; exit 1;;
+*[^-_./:a-zA-Z0-9]*)	printf 'OOPS: unclear character in %q\n' "$GITACCOUNT" >&2; exit 1;;
 *:*)			;;
 *)			GITACCOUNT="github.com:$GITACCOUNT";;	# GitHub is a bit preferred here
 esac
@@ -127,7 +127,7 @@ fi
 
 if [ -s "$SSHDIR/$OLDNAME" ]
 then
-	echo "Porting $OLDNAME to $GITNAME"
+	printf 'Porting %q to %q\n' "$OLDNAME" "$GITNAME"
 	# Port old format to new one
 	ln -v "$SSHDIR/$OLDNAME"     "$DIR/$GITNAME" &&
 	ln -v "$SSHDIR/$OLDNAME".pub "$DIR/$GITNAME".pub
