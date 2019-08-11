@@ -469,6 +469,7 @@ EOF
 
 # Do a fake merge with the given refs.
 # Parent is the current HEAD.
+# use -a and -c to set the commit's AUTHOR or COMMITER date from the commit which follows.
 # Content is the current index.  Use git read-tree etc. to set etc.
 # You can use the usual environment stuff to augment the commit.
 # If you need more, use 'git commit --amend'
@@ -482,9 +483,15 @@ declare -A HAVE;
 i=0;
 b=;
 P=();
+a=false;
+c=false;
 for a in HEAD "$@";
 do
+	[ .-a = "$1" ] && { a=:; continue; }
+	[ .-c = "$1" ] && { c=:; continue; }
 	c="$(git rev-parse --verify "$a")" || { echo "cannot interpret $a" >&2; exit 1; };
+	$a &&    GIT_AUTHOR_DATE="$(git show -s --format=%ai "$c")" && export    GIT_AUTHOR_DATE && a=false;
+	$c && GIT_COMMITTER_DATE="$(git show -s --format=%ci "$c")" && export GIT_COMMITTER_DATE && c=false;
 	[ -z "${HAVE["$c"]}" ] || { echo "WARN: ignore already seen commit $a" >&2; continue; };
 	HAVE["$c"]=1;
 	P+=(-p "$c");
