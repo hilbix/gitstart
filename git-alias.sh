@@ -1,4 +1,14 @@
 #!/bin/bash
+#
+# A variant of git-alias which allows you to print aliases
+# the sane way, not rubbish like with git-alias from git-extras.
+#
+# Note that, unlike git-alias from git-extras,
+# this here neither allows to define or override aliases.
+# How do I create --local aliases with extra's git-alias anyway?
+#
+# For today I have not implemented search as well.
+# Use `less` for this.  It's easy.
 
 export LC_ALL=C
 
@@ -52,6 +62,7 @@ do
 		{
 		o	= substr(o,1,k);
 		x	= o;
+		# this overestimates TABs a bit
 		gsub(/\t/,"        ",x);
 		if (length(x)<=w || k<3)
 			break;

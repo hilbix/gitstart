@@ -174,7 +174,6 @@ OOPS tags are inconsistent.  You must manually repair this.;
 echo "WARNING: Mirroring is preliminary (and terribly incomplete)"
 EOF-mirror
 
-a alias	!git-alias.sh
 a amend	commit --amend
 a amit	commit --amend -C HEAD
 a bvv	branch -avv
@@ -537,10 +536,4 @@ EOF-relate
 a dograph '!graph(){ case "$#:$3" in 2:) r="HEAD...HEAD@{u}";; 3:*...*) r="$3";; 3:*) r="HEAD...$3";; *) r="$3...$4";; esac; r1="$(git rev-parse "${r%%...*}")"; r2="$(git rev-parse "${r##*...}")"; echo "$r - $r1 - $r2"; r1s=" $(git rev-parse --short "$r1") "; eval "v=\"\$$1\""; if [ ".$r1" = ".$r2" ]; then git pageat "${v# }" log --color=always $2 -1 "$r1"; else git pageat "$v" rev-list --color=always --cherry-mark --dense --left-right --boundary $2 --graph "$r1...$r2" --; fi; }; graph'
 a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
-
-# This is "git cherry" with something like an UI
-a carry	!git-carry.sh
-
-# Upcoming: Formerly gitstart-add.sh and gitstart-ls.sh, in future git-ssh.sh
-a ssh !git-ssh.sh
 
