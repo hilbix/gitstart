@@ -364,6 +364,7 @@ do
 done;
 rm -rf "$GIT_DIR/refs/original/" "$GIT_DIR/"*_HEAD;
 git reflog expire --expire-unreachable=now --all;
+git fsck || nope damaged repo;
 git gc --prune=now --aggressive;
 wipe-EOF
 
