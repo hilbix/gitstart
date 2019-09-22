@@ -351,6 +351,18 @@ for a; do subpath "$a" "$pat" && [ -n "$sub" ] && subs+="${sub#/}"; done;
 git su "${args[@]}" -- "${subs[@]}";
 :;
 EOF
+b wipe	<<'wipe-EOF'
+hi() { printf "$@" >&2; };
+nope() { e=$?; hi '\nnot wiped: %q\n' "$1"; exit $e; };
+hi 'This prunes NOW.  Type WIPE and Return: ';
+for a in W I P E '';
+do
+	w=x;
+	read -rn1 w && [ ".$a" = ".$w" ] || nope "$w";
+done;
+git gc --prune=now --aggressive
+wipe-EOF
+
 a up	status
 a squash	rebase --interactive
 a fixup		rebase --interactive --autosquash
