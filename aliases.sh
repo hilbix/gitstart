@@ -506,12 +506,12 @@ for a in HEAD "$@";
 do
 	[ .-a = "$1" ] && { a=:; continue; }
 	[ .-c = "$1" ] && { c=:; continue; }
-	c="$(git rev-parse --verify "$a")" || { echo "cannot interpret $a" >&2; exit 1; };
-	$a &&    GIT_AUTHOR_DATE="$(git show -s --format=%ai "$c")" && export    GIT_AUTHOR_DATE && a=false;
-	$c && GIT_COMMITTER_DATE="$(git show -s --format=%ci "$c")" && export GIT_COMMITTER_DATE && c=false;
-	[ -z "${HAVE["$c"]}" ] || { echo "WARN: ignore already seen commit $a" >&2; continue; };
-	HAVE["$c"]=1;
-	P+=(-p "$c");
+	p="$(git rev-parse --verify "$a")" || { echo "cannot interpret $a" >&2; exit 1; };
+	$a &&    GIT_AUTHOR_DATE="$(git show -s --format=%ai "$p")" && export    GIT_AUTHOR_DATE && a=false;
+	$c && GIT_COMMITTER_DATE="$(git show -s --format=%ci "$p")" && export GIT_COMMITTER_DATE && c=false;
+	[ -z "${HAVE["$p"]}" ] || { echo "WARN: ignore already seen commit $a" >&2; continue; };
+	HAVE["$p"]=1;
+	P+=(-p "$p");
 	if [ -z "$b" ]; then b="Fake-Merge"; else b="$b $a,"; fi;
 done;
 ob="$(git write-tree)" || { echo "git-write-tree failed, aborting" >&2; exit 1; };
