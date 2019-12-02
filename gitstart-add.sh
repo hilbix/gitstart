@@ -177,8 +177,13 @@ git config --global --unset 'url.$org.insteadOf';
 EOF
 
 cat <<EOF
+
+git fetch https://${GITACCOUNT/://}/empty.git;
+git tag empty FETCH_HEAD;
+git reset FETCH_HEAD;
+
 git config --global 'url.git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git.insteadOf' '$ORG';
-git push -u origin master
+git push -u origin master;
 
 If your git is too old for the last command, use this sequence instead:
 git push origin master; git checkout origin/master;
