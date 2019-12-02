@@ -503,8 +503,8 @@ a=false;
 c=false;
 for b in HEAD "$@";
 do
-	[ .-a = "$1" ] && { a=:; continue; }
-	[ .-c = "$1" ] && { c=:; continue; }
+	[ .-a = "$b" ] && { a=:; continue; }
+	[ .-c = "$b" ] && { c=:; continue; }
 	p="$(git rev-parse --verify "$b")" || { echo "cannot interpret $b" >&2; exit 1; };
 	$a &&    GIT_AUTHOR_DATE="$(git show -s --format=%ai "$p")" && export    GIT_AUTHOR_DATE && a=false;
 	$c && GIT_COMMITTER_DATE="$(git show -s --format=%ci "$p")" && export GIT_COMMITTER_DATE && c=false;
