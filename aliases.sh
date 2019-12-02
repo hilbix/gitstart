@@ -497,25 +497,24 @@ EOF
 #n="$(git describe --all --exact-match "$a")" && [ -n "$n" ] || n="$c";
 b fake-merge <<'EOF'
 declare -A HAVE;
-i=0;
-b=;
+m=;
 P=();
 a=false;
 c=false;
-for a in HEAD "$@";
+for b in HEAD "$@";
 do
 	[ .-a = "$1" ] && { a=:; continue; }
 	[ .-c = "$1" ] && { c=:; continue; }
-	p="$(git rev-parse --verify "$a")" || { echo "cannot interpret $a" >&2; exit 1; };
+	p="$(git rev-parse --verify "$b")" || { echo "cannot interpret $b" >&2; exit 1; };
 	$a &&    GIT_AUTHOR_DATE="$(git show -s --format=%ai "$p")" && export    GIT_AUTHOR_DATE && a=false;
 	$c && GIT_COMMITTER_DATE="$(git show -s --format=%ci "$p")" && export GIT_COMMITTER_DATE && c=false;
-	[ -z "${HAVE["$p"]}" ] || { echo "WARN: ignore already seen commit $a" >&2; continue; };
+	[ -z "${HAVE["$p"]}" ] || { echo "WARN: ignore already seen commit $b" >&2; continue; };
 	HAVE["$p"]=1;
 	P+=(-p "$p");
-	if [ -z "$b" ]; then b="Fake-Merge"; else b="$b $a,"; fi;
+	if [ -z "$m" ]; then m="Fake-Merge"; else m="$m $b,"; fi;
 done;
 ob="$(git write-tree)" || { echo "git-write-tree failed, aborting" >&2; exit 1; };
-cc="$(git commit-tree "${P[@]}" -m "${b:0:-1} into $(git rev-parse --abbrev-ref HEAD)" "$ob")" && git ff "$cc"
+cc="$(git commit-tree "${P[@]}" -m "${m:0:-1} into $(git rev-parse --abbrev-ref HEAD)" "$ob")" && git ff "$cc"
 EOF
 
 
