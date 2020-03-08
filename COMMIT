@@ -41,6 +41,7 @@ do
 	case "$a" in
 	('"'*'"')	a="${a%\"}"; a="${a#\"}"; a="$(echo -e "$a"x)"; a="${a%x}";;
 	esac
+	[ 0 = $# ] || given "$a" "$@" || continue;
 	b="${line:0:3}"
 	args=(--only)
 	t=modified
@@ -68,3 +69,4 @@ do
 done 6< <(git status --porcelain .)
 
 git status
+
