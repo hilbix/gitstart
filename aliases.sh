@@ -538,9 +538,9 @@ a run	'!f() { cd "$GIT_PREFIX" && exec "$@"; }; f'			# Like 'git exec' but stay 
 a bash	'!f() { cd "$GIT_PREFIX" && exec bash -c "${*:-set}"; }; f'	# "git bash x" is short for "git run bash -c x" where x defaults to "set"
 b dir	<<<'cd "${GIT_DIR:-"$(git rev-parse --git-dir)"}" && exec "${@:-"$SHELL"}"'	# enter/run in associated GIT_DIR
 
-# Switch to another branch, just moving head and NOT affecting workdir
+# Hop onto another branch, just moving head and NOT affecting workdir
 # See https://stackoverflow.com/a/45060070
-a switch '!f() { git contained && git rev-parse --verify "$*" && git checkout "HEAD^{}" && git reset --soft "$*" && git checkout "$*"; }; f'
+a hop '!f() { git contained && git rev-parse --verify "$*^{commit}" && git checkout "HEAD^{}" && git reset --soft "$*" && git checkout "$*"; }; f'
 
 # See https://gist.github.com/hilbix/7703225
 # Basic idea from https://gist.github.com/jehiah/1288596
@@ -559,4 +559,32 @@ EOF-relate
 a dograph '!graph(){ case "$#:$3" in 2:) r="HEAD...HEAD@{u}";; 3:*...*) r="$3";; 3:*) r="HEAD...$3";; *) r="$3...$4";; esac; r1="$(git rev-parse "${r%%...*}")"; r2="$(git rev-parse "${r##*...}")"; echo "$r - $r1 - $r2"; r1s=" $(git rev-parse --short "$r1") "; eval "v=\"\$$1\""; if [ ".$r1" = ".$r2" ]; then git pageat "${v# }" log --color=always $2 -1 "$r1"; else git pageat "$v" rev-list --color=always --cherry-mark --dense --left-right --boundary $2 --graph "$r1...$r2" --; fi; }; graph'
 a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
+
+# Safely jump from some detached head state to some other branch possibly doing an ff of this branch.
+# In other words: It is like a "git co && git ff $CURRENTHEAD" without touching the worktree.
+# If no branch is given the nearest branch which does not jump beyond it's tracking branch is used.
+# This is meant to be used with `git su` in case you are get into detached head state.
+# "git coff [branch [commit]]"
+b coff	<<'EOF-coff'
+explicite=false;
+LIST=("$@")
+if [ 0 = $# ];
+then
+	explicite=:
+fi
+# explicicte
+# pick our location
+# find next nearest branch (or take the given ones)
+# take the nearest one
+# check the tracking location of this branch
+EOF-coff
+
+# Branch fast-forward
+# This fast-forwards a branch we are not on.
+# Format is branch (tracking) or branch=commit (to the given commit)
+# By default it automatically fast-forwards all other tracking branches
+# "git bff [branch=commit].."
+b bff	<<'EOF-bff'
+
+EOF-bff
 
