@@ -35,12 +35,27 @@ After install:
 
 * `~/.ssh/.add [REPO [ACCOUNT]]` add a repository deployment key and tells you what to do.  `REPO` is taken from the current path.  `ACCOUNT` needs to be given on the first invocation only.  Try `~/.ssh/.add '' YOURGITHUBACCOUNT`.  It is idempotent, so you can run it multiple times and it always does the same.
 
+
+Commands:
+---------
+
+* `git alias`: show all git aliases, indented
+
+* `git hdiff BRANCH`: finds a diff to the branch and branch's history.  `branch` defaults to `master`
+  - If you have a working branch which is partially merged to `master`, then `git diff` does not work very well.
+  - This here ignores all things which are already in master somewhere, even if heavily modified later.
+  - It also detects the minimum diff to the history, such that you hopefully can quickly see what has really changed
+
+Things which are very special to me:
+
+* `git carry [commit[...]commit]`: Interactively cherry-pick (cherry .. carry .. you get it) commits found in the given repository and missing locally.  This needs to find `git-carry.sh` in the current path.  By default it tries the current `BRANCH` to `upstream/BRANCH` (not: `origin`!).  Example: `git carry upstream/master` which is equivalent to `git carry` if you are on `master`.
+  - TODO: Use `git notes` instead of directory `.gitcarry`, as the latter is plain stupid
+
+
 Aliases:
 --------
 
 This adds some GIT aliases.  Short documentation here:
-
-* `git alias`: show all git aliases, indented
 
 * `git st`: `git status | less`
 * `git bv`: summary for `git branch -av` with branches combined
@@ -107,18 +122,15 @@ This adds some GIT aliases.  Short documentation here:
     thereby documenting where the things came from.
  - A better strategy would be to create feature-merge and a feature-unmerged branches.  But quite often history is different.
 
-Things which are very special to me:
-
-* `git carry [commit[...]commit]`: Interactively cherry-pick (cherry .. carry .. you get it) commits found in the given repository and missing locally.  This needs to find `git-carry.sh` in the current path.  By default it tries the current `BRANCH` to `upstream/BRANCH` (not: `origin`!).  Example: `git carry upstream/master` which is equivalent to `git carry` if you are on `master`.
-  - TODO: Use `git notes` instead of directory `.gitcarry`, as the latter is plain stupid
-
 * `git up`: `git status`  (this is because I always abused `cvs up` for what `git status` does today)
+
 
 Not yet implemented (perhaps upcomming, so it is already registered but not implemented):
 
 * `git ssh`: ssh key management
 * `git note`: notes for branches
 * `git hub`: interface to GitHUB API advanced commands
+
 
 Rationale:
 ----------
@@ -135,7 +147,7 @@ Contact:
 
 If something does not work as expected, please try to fix it yourself.  If you think your changes are interesting, please send me a pull request on GitHub.
 
-Please note that I cannot read my mail due to SPAM.  So better use my pager (URL see GitHub) wisely, as I will ignore messages which are errornously marked important.  Thank you for your understanding.
+Please note that I cannot read my mail due to SPAM.  ~~So better use my pager (URL see GitHub) wisely~~ (pager is down currently), as I will ignore messages which are errornously marked important.  Thank you for your understanding.
  
 
 License:
