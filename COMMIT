@@ -49,10 +49,10 @@ do
 	' M ')	git exec git add "$a";;
 	'M  ')	;;
 	'MM ')	t=patched; args=(--patch);;
+	'AM ')	t=added;   args=(--patch);;
 	'?? ')	given "$a" "$@" || continue; t=added; git exec git add "$a";;
 	'A  ')	t=added;;
 	'T  ')	t=changed;;
-	'AM ')	printf '#?%-7s? %q\n' STATE "$a"; continue;;
 	' D ')	printf '#%-7s %q\n' DELETED "$a"; continue;;
 	'D  ')	t=deleted;;
 	'R  ')	moved "$a"; continue;;
