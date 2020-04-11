@@ -560,6 +560,18 @@ a dograph '!graph(){ case "$#:$3" in 2:) r="HEAD...HEAD@{u}";; 3:*...*) r="$3";;
 a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
 
+# "git bring file" is the opposite of "git fetch file". Defaults to commits not on upstream
+b bring <<'EOF-bring'
+[ -n "$1" ] || set -- "$(mktemp --suffix=.bundle)" "${@:2}";
+[ -n "$2" ] || set -- "$1" "@{u}..." "${@:3}";
+git bundle create "$@" &&
+ls -al "$1";
+EOF-bring
+
+##
+## Not ready below
+##
+
 # Safely jump from some detached head state to some other branch possibly doing an ff of this branch.
 # In other words: It is like a "git co && git ff $CURRENTHEAD" without touching the worktree.
 # If no branch is given the nearest branch which does not jump beyond it's tracking branch is used.
