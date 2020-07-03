@@ -180,7 +180,7 @@ cat <<EOF
 
 git fetch https://${GITACCOUNT/://}/empty.git;
 git tag empty FETCH_HEAD;
-git reset FETCH_HEAD;
+git reset --soft FETCH_HEAD;
 
 git config --global 'url.git-$GITNAME:${GITACCOUNT#*:}/$GITREPO.git.insteadOf' '$ORG';
 git push -u origin master;
