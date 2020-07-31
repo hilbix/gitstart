@@ -561,6 +561,8 @@ a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
 
 # "git bring file" is the opposite of "git fetch file". Defaults to commits not on upstream
+# "git pull file" does "git fetch file && git ff FETCH_HEAD".
+# "git bundle unbundle file" reads it and prints the commits you can give a name
 b bring <<'EOF-bring'
 [ -n "$1" ] || set -- "$(mktemp --suffix=.bundle)" "${@:2}";
 [ -n "$2" ] || set -- "$1" "@{u}..." "${@:3}";
