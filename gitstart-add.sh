@@ -237,7 +237,7 @@ else
 
 Consider to
 
-	mkdir %q && echo Include %q.d/\\*.conf >> %q
+	mkdir %q.d && echo Include %q.d/\\*.conf >> %q
 
 ' "$CONF" "$CONF" "$CONF" >&2
 
