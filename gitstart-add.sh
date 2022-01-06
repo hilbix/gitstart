@@ -179,6 +179,7 @@ Host git-$GITNAME
  User git
  IdentityFile $DIR/$GITNAME
  IdentitiesOnly yes
+ IdentityAgent none
 
 EOF
 }
