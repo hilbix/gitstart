@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# vim: ft=bash
 
 export LC_ALL=C.UTF-8 || export LC_ALL=C
 
@@ -176,6 +178,7 @@ EOF-mirror
 
 a amend	commit --amend
 a amit	commit --amend -C HEAD
+b adate	<<<'export LC_ALL=C; printf -vd "%(%a, %d %b %Y %T %z)T" "${1:--1}"; GIT_COMMITTER_DATE="$d" git commit --amend --no-edit'
 a bvv	branch -avv
 b bv.ign <<<'for a; do git config --local --get-all ignore.bv | fgrep -qx "$a" || git config --local --add ignore.bv "$a"; done'
 b bv	<<'EOF-bv'
