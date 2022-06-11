@@ -254,7 +254,8 @@ a check	diff --check
 b contained	<<<'[ -n "$(git branch --list --contains "${*-HEAD}" 2>/dev/null | sed -e "s/^..//" -e "/^(/d")" ] && exit; printf "FAIL: %q is not on a branch\\n" "${*-HEAD}" >&2; exit 1'
 a co	'!git contained && git checkout'
 b empty	<<'EOF-empty'
-git tag -- "${1:-empty}" "$(git hash-object -t commit --stdin -w <<<"tree $(git hash-object -wt tree /dev/null)"$'\n')"
+# Do not remove double spaces in following, else 'git fsck' fails.  Is this the shortest possible empty commit?
+git tag -- "${1:-empty}" "$(git hash-object -t commit --stdin -w <<<"tree $(git hash-object -wt tree /dev/null)"$'\nauthor  <> 0 +0000\ncommitter  <> 0 +0000')"
 EOF-empty
 a ff	merge --ff-only --
 a pager	'!pager() { cd "$GIT_PREFIX" && git -c color.status=always -c color.ui=always "$@" 2>&1 | less -XFR; }; pager'
