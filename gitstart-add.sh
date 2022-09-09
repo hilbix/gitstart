@@ -35,6 +35,8 @@ exit 42
 
 repo()
 {
+local r tmp
+
 TOP="$(git rev-parse --show-toplevel)" ||
 {
 	cat <<EOF >&2
@@ -47,12 +49,16 @@ EOF
 TOP="$(readlink -e "$TOP")"
 
 tmp="$TOP"
-while	g="${tmp%[-._A-Z]}"
+r="$TOP"
+while	g="${tmp%[_A-Z]}"
 	[ ".$g" != ".$tmp" ]
 do
+	case "$tmp" in
+	(*_)	r="$g";;
+	esac
 	tmp="$g"
 done
-tmp="${tmp##*/}"
+tmp="${r##*/}"
 case "$tmp" in
 ({tmp,dev,stage,prod,work,maint}.*)	tmp="${tmp#*.}";;
 esac
@@ -188,7 +194,7 @@ showkey()
 {
 cat - "$DIR/$GITNAME.pub" <<EOF
 
-Add this (writable) Deployment Key to https://${GITACCOUNT/://}/$GITREPO
+Add this (writable) Deployment Key to https://${GITACCOUNT/://}/$GITREPO/settings/keys
 
 EOF
 echo
