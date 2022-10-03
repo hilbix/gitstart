@@ -1,30 +1,39 @@
 #!/bin/bash
 #
-# If this outputs
-#	all your base are belong to us
-# then you are vulnerable to malicious git code execution!
+# This tries to detect and avoid known git problems
+# with typical shell based setups.
+#
+# If you know more, please open Issue at https://github.com/hilbix/gitstart/issues
 
-check()
+dash()
 {
-# https://unix.stackexchange.com/a/249726
-code="$(cd "$(dirname -- "$0")/security-test" && HOME="$1" script -c 'git log' -q -)"
-[ 'all your base are belong to us' != "${code%$'\r'}" ]
+  printf -- '------------------------------------------------------------------------\n'
+  [ -z "$*" ] || { printf '%s\n' "$1" && dash "${@:2}"; }
 }
 
-run()
+halt()
 {
-git config --global safe.bareRepository explicit || return
-git config --local --unset safe.bareRepository || :
+  dash "Press RETURN to continue." >/dev/tty && read </dev/tty
+}
 
-check / && return
+check-bare-git()
+{
+  code="$(cd "$(dirname -- "$0")/security-test" && HOME="$1" script -c 'git log' -q /dev/null)"
+  [ 'all your base are belong to us' != "${code%$'\r'}" ]
+}
 
-cat <<EOF
-------------------------------------------------------------------------
+check-bare()
+{
+  git config --global safe.bareRepository explicit || return
+  git config --local --unset safe.bareRepository || :
 
-!! EXTREME SECURITY RISK ALERT !!
+  check-bare-git / && return
+
+  dash '!! EXTREME SECURITY RISK ALERT !!'
+  cat <<EOF
 
 Your git is vulnerable to the
-	Unexpected Arbitrary Code Execution Attack
+        Unexpected Arbitrary Code Execution Attack
 for Bare Repositories included in some repository.
 
 URL: https://github.com/justinsteven/advisories/blob/main/2022_git_buried_bare_repos_and_fsmonitor_various_abuses.md
@@ -39,7 +48,7 @@ this danger to you.  Already looking into the directory may
 trigger the attack if you work with the recommended environment.
 
 Entering an infected subdirectory and running a simple commands like
-	git log
+        git log
 from terminal can execute any code which was defined by the attacker.
 
 When you have installed the usual recommended git shell helpers,
@@ -53,35 +62,44 @@ Please write a letter to them, explaining your opinion on this.
 
 Thank you very much.
 
-------------------------------------------------------------------------
 EOF
+  dash '!! EXTREME SECURITY RISK ALERT !!'
 
-if	check "$HOME"
-then
-	cat <<EOF
+  if	check-bare-git "$HOME"
+  then
+        cat <<EOF
 safe.bareRepository was set in your --global .gitconfig which hopefully
 is able to protect you.  However this setting can be overridden by local
 git configurations, hence you are not entirely safe until this issue has
 been dealt with in git itself.  Thanks for your understanding.
-------------------------------------------------------------------------
 EOF
-else
-	cat <<EOF
+        dash
+  else
+        cat <<EOF
 Either your git is too old to be able to protect you against this,
 or the workaround setting safe.bareRepository to explicit failed.
 
 PLEASE CHECK OR CONSIDER UPGRADING TO GIT 2.38 OR ABOVE!
-
-Press RETURN to continue.
-------------------------------------------------------------------------
 EOF
-	read </dev/tty
-fi
+        HALT=:
+  fi
+}
+
+run()
+{
+  HALT=false
+
+  check-bare ||
+  # add more checks here
+
+  return
+  $HALT || return 0
+  halt
 }
 
 run && exit
 
-echo -n "WARNING!  CHECK FAILED.  Sorry!  Please press RETURN to continue: "
+dash 'WARNING!  CHECK FAILED.  Sorry!  Please press RETURN to continue' >&2
 read </dev/tty
 exit 1
 
