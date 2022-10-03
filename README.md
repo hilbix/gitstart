@@ -1,7 +1,8 @@
 **This already is useful to others!**
 
 > **!!EXTREME!SECURITY!ALERT!!** This here sets `safe.bareRepository=explicit` as a **CRITICAL SECURITY FIX TO GIT**.
-> ALL VERSIONS OF GIT BEFORE 2.38 ARE UNSAFE TO USE, AND 2.38 AND ABOVE ARE ONLY SAFE TO USE IF ABOVE FIX IS APPLIED!
+> [ALL VERSIONS OF GIT BEFORE 2.38 ARE UNSAFE TO USE](https://github.com/justinsteven/advisories/blob/main/2022_git_buried_bare_repos_and_fsmonitor_various_abuses.md),
+> AND [2.38 AND ABOVE ARE ONLY SAFE TO USE IF ABOVE FIX IS APPLIED](https://github.blog/2022-10-03-highlights-from-git-2-38/)!
 >
 > Apparently nobody accepted the horrible impact of this option yet.
 > But if anybody gets into control of some repository, tricking others to execute arbitrary code is more than trivial.
