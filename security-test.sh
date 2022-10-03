@@ -7,16 +7,16 @@
 check()
 {
 # https://unix.stackexchange.com/a/249726
-code="$(cd "$(dirname -- "$0")/security-test" && script -c 'git log' -q -)"
+code="$(cd "$(dirname -- "$0")/security-test" && HOME="$1" script -c 'git log' -q -)"
 [ 'all your base are belong to us' != "${code%$'\r'}" ]
 }
 
 run()
 {
 git config --global safe.bareRepository explicit || return
-git config --local safe.bareRepository all || return
+git config --local --unset safe.bareRepository || :
 
-check && return
+check / && return
 
 cat <<EOF
 ------------------------------------------------------------------------
@@ -56,12 +56,10 @@ Thank you very much.
 ------------------------------------------------------------------------
 EOF
 
-git config --local --unset safe.bareRepository || return
-
-if	check
+if	check "$HOME"
 then
 	cat <<EOF
-safe.bareRepository was set in your global .gitconfig which hopefully
+safe.bareRepository was set in your --global .gitconfig which hopefully
 is able to protect you.  However this setting can be overridden by local
 git configurations, hence you are not entirely safe until this issue has
 been dealt with in git itself.  Thanks for your understanding.
@@ -69,11 +67,12 @@ been dealt with in git itself.  Thanks for your understanding.
 EOF
 else
 	cat <<EOF
-Apparently your git is too old to be able to protect you against this.
+Either your git is too old to be able to protect you against this,
+or the workaround setting safe.bareRepository to explicit failed.
 
-PLEASE CONSIDER UPGRADING TO GIT 2.38 OR ABOVE!
+PLEASE CHECK OR CONSIDER UPGRADING TO GIT 2.38 OR ABOVE!
 
-Please press RETURN to continue.
+Press RETURN to continue.
 ------------------------------------------------------------------------
 EOF
 	read </dev/tty
@@ -82,7 +81,7 @@ fi
 
 run && exit
 
-echo -n "WARNING!  CHECK FAILED.  Please press RETURN to continue: "
+echo -n "WARNING!  CHECK FAILED.  Sorry!  Please press RETURN to continue: "
 read </dev/tty
 exit 1
 
