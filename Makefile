@@ -5,6 +5,7 @@ all:	install
 
 .PHONY: install
 install:
+	./security-test.sh
 	./fix-bashrc.sh
 	./aliases.sh
 	mkdir -p "$$HOME/bin"
