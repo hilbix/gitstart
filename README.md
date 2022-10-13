@@ -3,14 +3,15 @@
 > **!!EXTREME!SECURITY!ALERT!!** This here sets `safe.bareRepository=explicit` as a **CRITICAL SECURITY FIX TO GIT**.
 > [ALL VERSIONS OF GIT BEFORE 2.38 ARE UNSAFE TO USE](https://github.com/justinsteven/advisories/blob/main/2022_git_buried_bare_repos_and_fsmonitor_various_abuses.md),
 > AND [2.38 AND ABOVE ARE ONLY SAFE TO USE IF ABOVE FIX IS APPLIED](https://github.blog/2022-10-03-highlights-from-git-2-38/)!
+> (To be exact: Without this fix `git` is dangerous to use.  With this fix it is believed to be not as dangerous, but there are still ways by third party to circumvent this.)
 >
 > Apparently nobody accepted the horrible impact of this option yet.
-> But if anybody gets into control of some repository, tricking others to execute arbitrary code is more than trivial.
+> But if anybody gets into control of some repository, tricking others to execute arbitrary code [is more than trivial](security-test/config).
 >
 > - DO NOT USE GIT BEFORE 2.38 WITH 3RD PARTY REPOSITORIES!  **You have been warned.**
 > - DO NOT USE GIT FROM 2.38 AND ABOVE WITHOUT `safe.bareRepository=explicit`!  **You have been warned!**
 >
-> Note that his security flaw is not in my repo, but it did not mitigate this risk before.  Sorry, as I was not aware!
+> Note that his security flaw is not in my repo here, but it did not mitigate this risk before.  Sorry, as I was not aware!
 
 
 Helpers for Git and GitHub
@@ -28,6 +29,7 @@ On each machine:
 
 ```bash
 git clone https://github.com/hilbix/gitstart
+cd gitstart
 make install
 ```
 
