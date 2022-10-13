@@ -81,7 +81,10 @@ This adds some GIT aliases.  Short documentation here:
 * `git ls`: `git log --graph --oneline`
 * `git tree`: is `git ls --all`
 * `git check`: `git diff --check`
-* `git switch BRANCH`: switch to another branch leaving worktree and index untouched.
+* `git hop BRANCH`: switch to another branch leaving worktree and index untouched.
+  - previously called `git switch BRANCH`, but this has been taken by `git` itself.
+  - Note that the novel `git switch` does not switch, it does what `git checkout` did on branches
+  - Hence the new `git switch` confuses me while `git checkout` did not.  YMMV
 
 * `git co`: `git checkout`
 * `git amend`: `git commit --amend`.  BUG: Does not check for the replaced commit beeing pushed already, which will break origin.
