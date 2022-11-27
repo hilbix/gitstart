@@ -4,6 +4,8 @@
 # with typical shell based setups.
 #
 # If you know more, please open Issue at https://github.com/hilbix/gitstart/issues
+#
+# Run this script with "setsid" (like: "setsid make") to prevent /dev/tty interaction.
 
 dash()
 {
@@ -13,7 +15,7 @@ dash()
 
 halt()
 {
-  dash "Press RETURN to continue." >/dev/tty && read </dev/tty
+  dash "Press RETURN to continue." >/dev/tty && read </dev/tty || :
 }
 
 check-bare-git()
