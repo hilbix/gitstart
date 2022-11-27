@@ -5,23 +5,23 @@
 
 git fast-export "$@" > >(
 exec python3 -c '
-
 import sys
 import json
+ISO="iso-8859-1"
 
 while	1:
-	a	= sys.stdin.readline()
+	a	= sys.stdin.buffer.readline()
 	if not a: break
-	if a[0:5] != "data ":
-		sys.stdout.write(a)
+	if a[0:5] != b"data ":
+		sys.stdout.buffer.write(a)
 		continue
-	n = int(a[5:].rstrip("\n"))
-	assert a == f"data {n}\n", f"incorrectly parsed {a}: {n}"
+	n = int(a[5:].decode(ISO).rstrip("\n"))
+	assert a == f"data {n}\n".encode(), f"incorrectly parsed {a}: {n}"
 	if n == 0: continue
-	d = sys.stdin.read(n)
-	sys.stdout.write("json ")
-	json.dump(d, fp=sys.stdout)
-	sys.stdout.write("\n")
+	sys.stdout.buffer.write(b"json ")
+	json.dump(sys.stdin.buffer.read(n).decode(ISO), fp=sys.stdout)
+	sys.stdout.flush()
+	sys.stdout.buffer.write(b"\n")
 '
 )
 
