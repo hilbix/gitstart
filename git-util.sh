@@ -57,7 +57,7 @@ cmd-help()
 
 : [configfile]..
 # output the config a sorted way
-cmd-configsort()
+cmd-config()
 {
   [ 0 = $# ] && set -- "$(git rev-parse --git-dir)/config"
   awk '
