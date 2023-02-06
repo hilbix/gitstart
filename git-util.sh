@@ -20,7 +20,7 @@ case "$#" in
 esac
 
 : [command]..
-# give help for commands
+# give detailed help for commands
 cmd-help()
 {
   local -A CMD HELP
@@ -31,6 +31,7 @@ cmd-help()
 	case "$line" in
 	(': '*)		A="${line#': '}"; B=;;
 	('# '*)		B="$B"$'\t'"${line#'# '}"$'\n';;
+	($'#\t'*)	B="$B"$'\t\t# '"${line#\#$'\t'}"$'\n';;
 	('cmd-'*'()')	C="${line#cmd-}";
 			C="${C%'()'}";
 			CMD["$C"]="$A";
@@ -41,25 +42,31 @@ cmd-help()
   done 6<"$0"
   if	[ 0 = "$#" ]
   then
+	printf 'for more help see: %q help help\n' "$0"
 	for a in "${!CMD[@]}"
 	do
 		printf '%-*q\t%s\n' "$max" "$a" "${CMD["$a"]}"
 	done
 	exit 42
-  fi
+  fi >&2
   for a
   do
 	[ -n "${CMD["$a"]}${HELP["$a"]}" ] || OOPS unknown command: "$a"
 	printf '%-*q\t%s\n%s' "$max" "$a" "${CMD["$a"]}" "${HELP["$a"]}"
-  done
+  done >&2
   exit 42
 }
 
 : [configfile]..
-# output the config a sorted way
+# output the config a sorted way.
+# Show config in GIT_DIR:
+#	git util config
+# diff example:
+#	diff <(git util config ~/.gitconfig) <(ssh site2 cat .gitconfig | git util config -)
 cmd-config()
 {
   [ 0 = $# ] && set -- "$(git rev-parse --git-dir)/config"
+  # luckily git [section]s cannot contain TAB characters
   awk '
 /^\[.*\]$/	{ section=$0; next; }
 		{ print section "\t" $0 }
