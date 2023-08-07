@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# history-diff to a branch
-#
-# Checks if all files in the worktree are known in the branch or the branch's history
-# UNKNOWN are the files which are unknown in the worktree
-# NEW are the files which are new
-# DIFF are the files which differ, so have some local changes unknown to branch
-# SPACES are notified, just in case you have some local cleanup compared to the branch
+#U Usage: git hdiff [branch]
+#U	history-diff to a branch, default: master
+#U	Checks if all files in the worktree are known in the branch or the branch's history
+#U	UNKNOWN are the files which are unknown in the worktree
+#U	NEW are the files which are new
+#U	DIFF are the files which differ, so have some local changes unknown to branch
+#U	SPACES are notified, just in case you have some local cleanup compared to the branch
 
 STDOUT() { local e=$?; printf %q "$1"; [ 1 = $# ] || printf ' %q' "${@:2}"; printf '\n'; return $e; }
 STDERR() { local e=$?; STDOUT "$@" >&2; return $e; }
@@ -14,14 +14,22 @@ OOPS() { STDERR OOPS: "$@"; exit 23; }
 x() { STDERR exec: "$@"; "$@"; STDERR rc=$?: "$@"; }
 x() { "$@"; STDERR rc=$?: "$@"; }
 x() { "$@"; }
+i() { set -- $? "$@"; "${@:2}"; return $1; }
 o() { x "$@" || OOPS rc=$?: "$@"; }
-v() { set -- "$1" "$(o "${@:2}" && echo x)" || OOPS rc=$? setting "$1"; set -- "$1" "${2%x}"; declare -g "$1=${2%$'\n'}"; }
+v() { set -- "$1" "$(o "${@:2}" && echo x)"; set -- "$1" "${2%x}" "$?"; declare -g "$1=${2%$'\n'}"; return $3; }
+ov() { o v "$@"; }
+
+case "$#:$1" in
+(0:)		:;;
+(*:-h|*:--help)	false;;
+(1:-*)		OOPS branch cannot start with -: "$1";;
+(1:*)		:;;
+(*)		false;;
+esac || i sed -n 's/^#U \?//p' "$0" >&2 || exit 42
 
 branch="${1:-master}"
 
-[ 1 -ge "$#" ] || OOPS Usage: "$0" BRANCH
-
-v SHA git rev-parse --verify --quiet "$branch^{commit}"
+ov SHA git rev-parse --verify --quiet "$branch^{commit}"
 
 ok=0
 mis=0
@@ -29,24 +37,23 @@ new=0
 spc=0
 mod=0
 
-# Find DIFFs to master
+# Find DIFFs to master (or given branch)
 git diff -z --name-only "$SHA" |
 while read -rd '' name
 do
 	if	[ ! -f "$name" ]
 	then
-		echo "UNKNOWN: $name (in $branch but not here)"
+		printf 'UNKNOWN: %q (in %q but not here)\n' "$name" "$branch"
 		let mis++
 		continue
 	fi
 	MIN=
 	HIT=
-	while read -r sha
+	while	read -r sha
 	do
-		THING="$(git cat-file -p "$sha:$name" 2>/dev/null && echo x)" || continue
-		THING="${THING%x}"
+		v THING git cat-file -p "$sha:$name" 2>/dev/null
 #		echo -n "$sha."
-		if echo -n "$THING" | x cmp -s -- "$name" -
+		if	echo -n "$THING" | x cmp -s -- "$name" -
 		then
 #			echo "OK: $name"
 			let ok++
@@ -59,7 +66,7 @@ do
 	if [ -z "$HIT" ]
 	then
 		let new++
-		echo "NEWFILE: $name (nowhere in $branch)"
+		printf 'NEWFILE: %q (nowhere in %q)\n' "$name" "$branch"
 		continue
 	fi
 
