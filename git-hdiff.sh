@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# vim: ft=bash
+#
 #U Usage: git hdiff [branch]
 #U	history-diff to a branch, default: master
 #U	Checks if all files in the worktree are known in the branch or the branch's history
@@ -7,6 +9,9 @@
 #U	NEW are the files which are new
 #U	DIFF are the files which differ, so have some local changes unknown to branch
 #U	SPACES are notified, just in case you have some local cleanup compared to the branch
+#
+# This Works is placed under the terms of the Copyright Less License,
+# see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
 
 STDOUT() { local e=$?; printf %q "$1"; [ 1 = $# ] || printf ' %q' "${@:2}"; printf '\n'; return $e; }
 STDERR() { local e=$?; STDOUT "$@" >&2; return $e; }
