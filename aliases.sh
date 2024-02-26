@@ -503,7 +503,7 @@ EOF
 #n="$(git rev-parse --abbrev-ref "$a")" && [ -n "$n" ] && n="branch $n" || n="commit $c";
 #n="$(git describe --all --exact-match "$a")" && [ -n "$n" ] || n="$c";
 b fake-merge <<'EOF'
-declare -A HAVE;
+unset HAVE; declare -A HAVE;
 m=;
 P=();
 a=false;
@@ -567,8 +567,10 @@ a dograph '!graph(){ case "$#:$3" in 2:) r="HEAD...HEAD@{u}";; 3:*...*) r="$3";;
 a graph '!git dograph r1 --pretty'
 a graph1 '!git dograph r1s --oneline'
 
-# "git bring file" is the opposite of "git fetch file". Defaults to commits not on upstream
-# "git pull file" does "git fetch file && git ff FETCH_HEAD".
+# "git bring [file commits..]" creates file for "git fetch file".
+# file '' defaults to mktmp .bundle
+# first commit '' defaults to everything not on upstream: @{u}...
+# "git pull file" then does "git fetch file && git ff FETCH_HEAD".
 # "git bundle unbundle file" reads it and prints the commits you can give a name
 b bring <<'EOF-bring'
 [ -n "$1" ] || set -- "$(mktemp --suffix=.bundle)" "${@:2}";
@@ -576,6 +578,117 @@ b bring <<'EOF-bring'
 git bundle create "$@" &&
 ls -al "$1";
 EOF-bring
+
+# "git murx [SHA..]" puts "SHA"s (default HEAD) on the "murx" branch, thus keeping the SHA around for the future.
+# It uses the tree of the last SHA as the tree for the commit, so it does not introduce something new.
+# "git config --add murx.branch name" to set another name for the branch than "murx"
+b murx <<'EOF-murx'
+# I know the correct writing is "murks"
+STDERR() { local e=$?; { printf %q "$1"; printf ' %q' "${@:2}"; printf '\n'; } >&2; return $e; };
+OOPS() { STDERR OOPS: "$@"; exit 23; };
+[ 0 = $# ] && set -- HEAD;
+murx="$(git config --get murx.branch)";
+murx="${name:-murx}";
+PARENTS=();
+# preset the "murx" branch as the first parent
+unset KNOWN; declare -A KNOWN;
+SHA="$(git rev-parse --verify "$murx" 2>/dev/null)" && [ -n "$SHA" ] && PARENTS+=(-p "$SHA") && KNOWN["$SHA"]=1;
+# Make "git murx" idempotent, so calling it repeatedly does just nothing
+while	read -r parent sha && [ -n "$parent$sha" ];
+do
+	case "$parent" in
+	(parent)	KNOWN["$sha"]=1;;
+	esac;
+done < <(git cat-file -p "$SHA");
+last=;
+for a;
+do
+	p="$(git rev-parse --verify "$a")" || STDERR ignoring SHA "$a" || continue;
+	[ -z "${KNOWN["$p"]}" ] || STDERR ignoring already present SHA "$a" "$p" || continue;
+	KNOWN["$p"]=1;
+	PARENTS+=(-p "$p");
+	last="$p";
+done;
+[ -n "$last" ] || OOPS no usable SHAs found;
+# get the tree of the last SHA provided
+tree="$(git cat-file -p "$last" | sed -n '1s/^tree //p')";
+[ -n "$tree" ] || OOPS no usable tree found in "$last";
+# create "murx" merge from the given parents with the given tree
+MERGE="$(git commit-tree -m "murx: $*" "${PARENTS[@]}" "$tree")" && git branch -f "$murx" "$MERGE" && printf '# branch %q now at %q\n' "$murx" "$MERGE"
+EOF-murx
+
+# git condense [branch [parent]]
+# branch defaults to "murx" (see "git murx" above)
+# This condenses all the commits on the parent chaing into a single big merge
+# The parent defaults to the tracked upstream
+b condense <<'EOF-squash'
+STDERR() { local e=$?; { printf %q "$1"; printf ' %q' "${@:2}"; printf '\n'; } >&2; return $e; };
+OOPS() { STDERR OOPS: "$@"; exit 23; };
+if [ -z "$1" ];
+then
+	murx="$(git config --get murx.branch)";
+	set -- "${murx:-murx}" "${@:2}";
+fi;
+[ -n "$2" ] || set -- "$1" "$1{u}" "${@:3}";
+[ 2 = $# ] || OOPS too many arguments: git condense branch parent: "$@";
+b="$(git rev-parse --verify "$1")" && [ -n "$b" ] || OOPS invalid first arg "$1": "$b";
+p="$(git rev-parse --verify "$2")" && [ -n "$p" ] || OOPS invalid second arg "$2": "$p";
+tree="$(git cat-file -p "$b" | sed -n '1s/^tree //p')" && [ -n "$tree" ] || OOPS no usable tree found in "$b";
+STDERR tree "$tree";
+MSG=;
+cnt=0;
+nr=0;
+unset COMMIT; declare -A COMMIT;
+unset WAS; declare -A WAS;
+SHAS=();
+COMMIT["$p"]=0;
+next="$b";
+while	[ -n "$next" ] || OOPS did not reach "$p" from "$b"
+	[ ".$next" != ".$p" ]
+do
+	[ 100 -gt "$cnt" ] || OOPS too many commits: stopping at "$next";
+	COMMIT["$next"]=0;
+	first=;
+	{
+	read -r head sha && [ tree = "$head" ] || OOPS invalid commit "$next";
+	STDERR next "$next" "$sha";
+	while	read -r parent sha && [ -n "$parent$sha" ];
+	do
+		case "$parent" in
+		(author|committer)	continue;;
+		(parent)		;;
+		(*)			OOPS unknown header in commit object "$next": "$parent" "$sha";;
+		esac
+		[ -z "$first" ] && first="$sha" && continue;
+		[ 0 = "${COMMIT["$sha"]}" ] && continue;
+		let nr++ || :;
+		COMMIT["$sha"]=$nr;
+	done;
+	c="$(cat)";	 # useful use of cat
+	# ignore repeated messages
+	[ -z "${WAS["$c"]}" ] && MSG="$MSG"$'\n\n-------\n\n'"$c" && WAS["$c"]=x;
+	} < <(git cat-file -p "$next")
+	let cnt++ || :;
+	next="$first";
+done;
+[ 1 -le "$cnt" ] || OOPS nothing to do;
+# Now order COMMITs by their sequence.
+# Parent COMMITs are ignored (==0, their MSGs are gathered above).
+SHAS=();
+for sha in "${!COMMIT[@]}";
+do
+	SHAS[${COMMIT["$sha"]}]="$sha";
+done;
+# Create the merges in sequence of the SHAS
+# (which is ordered by COMMIT[] number)
+MERGES=(-p "$p");
+for sha in "${SHAS[@]}";
+do
+	MERGES+=(-p "$sha");
+done;
+MERGE="$(git commit-tree -m "condensed $1 to $2$MSG" "${MERGES[@]}" "$tree")" || OOPS merge failed for tree "$tree": "${MERGES[@]}";
+git branch -f "$1" "$MERGE" && printf '# branch %q now at %q condensed from %q\n' "$1" "$MERGE" "$b"
+EOF-squash
 
 ##
 ## Not ready below
