@@ -141,6 +141,18 @@ This adds some GIT aliases.  Short documentation here:
 
 * `git up`: `git status`  (this is because I always abused `cvs up` for what `git status` does today)
 
+* `git murx [COMMIT..]` saves the given commits/branches/etc. (`HEAD` by default) to a branch called `murx`
+ - The branch to save to (`murx`) can be changed with `git config murx.branch branchname`
+ - Missing:  A way to remove a COMMIT from the `murx` branch again
+
+* `git condense [murx [murx@{u}]]` squashes the branch into a single big merge
+  - **THIS IS SUBJECT TO CHANGE, TERRIBLY INCOMPLETE AND POSSIBLY DANGEROUS TO USE** on other branches than `murx`
+  - This is meant to reduce the clutter of the `murx` branch while keeping its function intact
+  - BUG: The two arguments should change their position
+  - BUG: It must not be able to run for the current branch
+  - BUG: It should ask for confirmation if not applied to the `murx` branch
+  - BUG: `murx@{u}` is wrong.  It should default to `HEAD@{u}` if there is no `murx@{u}`
+  - BUG: It should reduce all the parents, which are already included in another parent
 
 Not yet implemented (perhaps upcomming, so it is already registered but not implemented):
 
