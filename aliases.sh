@@ -619,7 +619,7 @@ EOF-murx
 
 # git condense [branch [parent]]
 # branch defaults to "murx" (see "git murx" above)
-# This condenses all the commits on the parent chaing into a single big merge
+# This condenses all the commits on the chain to the parent into a single big merge
 # The parent defaults to the tracked upstream
 b condense <<'EOF-squash'
 STDERR() { local e=$?; { printf %q "$1"; printf ' %q' "${@:2}"; printf '\n'; } >&2; return $e; };
