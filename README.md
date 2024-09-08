@@ -66,6 +66,20 @@ Things which are very special to me:
   - TODO: Use `git notes` instead of directory `.gitcarry`, as the latter is plain stupid
 
 
+Helpers:
+--------
+
+There are some helpers in the subdirectory [`helper/`](helper/).
+
+- `helper/gh-remote-forks.sh` pulls in all the forks of a repo on GitHub via `gh` command (which stems from GitHub).
+  - Run this multiply until no more forks are fetched (it only goes 1 level deeper each call).  You see this if there are no more `add` lines
+  - You probably should have installed [`cached.sh`](https://github.com/hilbix/misc/tree/master/helper) which needs [`unbuffered`](https://github.com/hilbix/unbuffered), else GitHub might block you because you run too many redundant requests
+  - `CACHEDMAX=$(date -d-2hours) gh-remote-forks` to discard all cached data which is older than the given date (2 hours in the example)
+  - `CACHED_DEBUG=x gh-remote-forks` to see what is going on (note that cache fails are not cached).  The `x` can be any nonempty string
+  - You can combine the two variables of course
+  - There are often missing repos (404) in the forked list.  I do not know what this meanse.  (Perhaps these are private?)  As caching failes on 404, it always tries to fetch them (for now).
+
+
 Aliases:
 --------
 
