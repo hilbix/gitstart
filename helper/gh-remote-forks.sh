@@ -11,6 +11,11 @@
 CACHED="$(which unbuffered md5sum >/dev/null 2>&1 && which cached.sh)"
 [ -n "$CACHED" ] || printf 'Running uncached\n' >&2
 
+STDOUT() { printf %q "$1"; [ 1 -ge $# ] || printf ' %q' "${@:2}"; printf '\n'; }
+STDERR() { local e=$?; STDOUT "$@" >&2; return $e; }
+DEBUG()	{ local e=$?; [ -z "$DEBUG" ] || STDERR "$@"; return $e; }
+x() { DEBUG exec: "$@"; "$@"; DEBUG rc=$?: "$@"; }
+
 # Escape any string into ASCII only using
 # A-Za-z0-9_-
 toascii()
@@ -33,15 +38,15 @@ toascii()
 }
 
 map() { while read -r a; do "$@" "$a"; done; }
-filter() { while read -r a; do filter "$a"; done; }
 
-list-remotes() { git remote; }
-get-remote-url() { git config --get "remote.$1.url"; }
+list-remotes() { x git remote; }
+get-remote-url() { x git config --get "remote.$1.url"; }
 filter-github-urls()
 {
+  DEBUG filter-github-urls "$1"
   case "$1" in
   (https://github.com/*)	echo "${1#https://github.com/}";;
-  (git@github.com:)		echo "${1#git@github.com:}";;
+  (git@github.com:*)		echo "${1#git@github.com:}";;
   esac
 }
 clr="$(tput el)"
@@ -57,19 +62,19 @@ gh-repo-source-fullname()
 {
   clr repo "$1"
   case "$1" in
-  (*/*/*)	return;;
+  (*/*/*)	clr; STDERR ignored: "$1"; return;;
   (*/*.git)	;;
-  (*)		return;;
+  (*)		clr; STDERR does not end on .git: "$1"; return;;
   esac;
-  data="$($CACHED gh api "repos/${1%.git}")" || return
-  jq -r '.source.full_name // .full_name' <<<"$data"
-  jq -r '.parent.full_name // .full_name' <<<"$data"
-  jq -r '.full_name' <<<"$data"
+  data="$(x $CACHED gh api "repos/${1%.git}")" || return
+  x jq -r '.source.full_name // .full_name' <<<"$data"
+  x jq -r '.parent.full_name // .full_name' <<<"$data"
+  x jq -r '.full_name' <<<"$data"
 }
 gh-repo-forks()
 {
   clr forks of "$1"
-  $CACHED gh api --paginate "repos/$1/forks" | jq -r '.[].full_name'
+  x $CACHED gh api --paginate "repos/$1/forks" | jq -r '.[].full_name'
 } 
 remote-name()
 {
@@ -81,9 +86,9 @@ remote-name()
 add-remote-fork()
 {
   remote-name name "$1"
-  git remote get-url "$name" >/dev/null 2>/dev/null && return
+  x git remote get-url "$name" >/dev/null 2>/dev/null && return
   printf 'add %q\n' "$1"
-  git remote add "$name" "https://github.com/$1.git"
+  x git remote add "$name" "https://github.com/$1.git"
 #  git remote set-url	"github-$name" "https://github.com/$1.git"
 }
 
